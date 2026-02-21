@@ -189,8 +189,13 @@ function playerKey(p) {
   return `${p.Player}|${p.Team}|${p.season}`;
 }
 
-function generateMatchup(pool, stats, usedKeys, rng) {
+function getYdsRatioThreshold(position) {
+  return position === 'QB' ? 0.70 : 0.55;
+}
+
+function generateMatchup(pool, stats, usedKeys, rng, position) {
   const list = pool.flat();
+  const minRatio = getYdsRatioThreshold(position);
   const maxAttempts = 500;
   for (let _ = 0; _ < maxAttempts; _++) {
     const i = Math.floor(rng() * list.length);
@@ -202,7 +207,7 @@ function generateMatchup(pool, stats, usedKeys, rng) {
 
     if (sameTeamSeason(a, b)) continue;
     if (usedKeys.has(playerKey(a)) || usedKeys.has(playerKey(b))) continue;
-    if (getYdsRatio(a, b, a.Pos) < 0.70) continue;
+    if (getYdsRatio(a, b, a.Pos) < minRatio) continue;
     if (hasStatTie(a, b, stats)) continue;
 
     return [a, b];
@@ -267,7 +272,7 @@ function initGame() {
     const pos = posOrder[r];
     const stats = pickStatsForRound(pos, state.rng);
     const pool = state.data[pos];
-    const matchup = generateMatchup(pool, stats, usedKeys, state.rng);
+    const matchup = generateMatchup(pool, stats, usedKeys, state.rng, pos);
     if (!matchup) {
       console.error('Failed to generate matchup for', pos);
       const a = pool[0], b = pool[1];
