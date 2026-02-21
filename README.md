@@ -1,4 +1,4 @@
-# Bigger Season
+# Better Season
 
 Daily NFL stat comparison game. Pick which player had the better season across three categories.
 

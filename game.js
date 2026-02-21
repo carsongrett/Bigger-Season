@@ -1,5 +1,5 @@
 /**
- * Bigger Season - Daily NFL comparison game
+ * Better Season - Daily NFL comparison game
  */
 
 // ========== DAILY MODE: replace random seed with today's date string ==========
@@ -71,6 +71,7 @@ function getStatDisplayName(col, position) {
     if (position === 'RB') return 'Rushing Touchdowns';
     return 'Receiving Touchdowns';
   }
+  if (col === 'Int') return 'Interceptions (select less)';
   return STAT_NAMES[col] || col;
 }
 
@@ -411,8 +412,8 @@ function goNext() {
 }
 
 function updateStreak() {
-  const key = 'biggerseason_streak';
-  const dateKey = 'biggerseason_lastDate';
+  const key = 'betterseason_streak';
+  const dateKey = 'betterseason_lastDate';
   const today = new Date().toDateString();
 
   let streak = parseInt(localStorage.getItem(key) || '0', 10);
@@ -431,18 +432,18 @@ function updateStreak() {
 }
 
 function getStreak() {
-  return parseInt(localStorage.getItem('biggerseason_streak') || '0', 10);
+  return parseInt(localStorage.getItem('betterseason_streak') || '0', 10);
 }
 
 function buildShareGrid() {
   const num = getGameNumber();
-  let grid = `🏈 Bigger Season #${num}\n\n`;
+  let grid = `🏈 Better Season #${num}\n\n`;
   state.roundScores.forEach(({ position, score, total }) => {
     const correct = '✅'.repeat(score);
     const wrong = '❌'.repeat(total - score);
     grid += `${position}  ${correct}${wrong}  ${score}/${total}\n`;
   });
-  grid += `\n${state.score}/9 — biggerseason `;
+  grid += `\n${state.score}/9 — betterseason `;
   return grid;
 }
 
