@@ -81,6 +81,137 @@ body::before {
   background: rgba(255, 255, 255, 0.08);
 }
 
+.menu-btn {
+  position: absolute;
+  right: 1rem;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0;
+  border: none;
+  background: transparent;
+  color: #a0a0a0;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0;
+}
+
+.menu-btn:hover {
+  color: #fff;
+}
+
+.menu-icon {
+  display: block;
+  width: 14px;
+  height: 2px;
+  background: currentColor;
+  border-radius: 1px;
+}
+
+/* Mode menu overlay */
+.menu-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 90;
+  align-items: flex-start;
+  justify-content: flex-end;
+}
+
+.menu-overlay.open {
+  display: flex;
+}
+
+.menu-panel {
+  width: 200px;
+  background: #16181d;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0 0 0 12px;
+  padding: 1rem;
+}
+
+.menu-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.75rem;
+}
+
+.menu-option {
+  display: block;
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #f0f0f0;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.menu-option:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.menu-option.selected {
+  background: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+}
+
+/* Start screen */
+#start-screen {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.start-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.start-mode-label {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.5rem;
+  letter-spacing: 0.15em;
+  color: #f59e0b;
+}
+
+.start-mode-desc {
+  font-size: 0.9rem;
+  color: #a0a0a0;
+  max-width: 240px;
+}
+
+.start-btn {
+  padding: 1rem 3rem;
+  font-size: 1.1rem;
+  font-weight: 800;
+  border: none;
+  background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.35);
+  transition: all 0.2s ease;
+}
+
+.start-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(59, 130, 246, 0.45);
+}
+
 .header h1 {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 1.75rem;
@@ -199,6 +330,23 @@ body::before {
 
 .position-badge,
 .round-badge {
+  display: inline-block;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.12);
+  padding: 0.35rem 1rem;
+  border-radius: 6px;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.blitz-timer {
+  display: none;
+}
+
+.blitz-timer.visible {
   display: inline-block;
   font-family: 'Bebas Neue', sans-serif;
   font-size: 1.25rem;
@@ -428,6 +576,17 @@ body::before {
   font-size: 1rem;
   font-weight: 600;
   color: #f59e0b;
+}
+
+.come-back-tomorrow {
+  display: none;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #a0a0a0;
+}
+
+.come-back-tomorrow.visible {
+  display: block;
 }
 
 .share-grid {

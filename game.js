@@ -1,13 +1,25 @@
 /**
- * Better Season - Daily NFL comparison game
+ * Better Season - NFL stat comparison game
+ * Modes: Unlimited, Daily, Blitz
  */
 
-// ========== DAILY MODE: replace random seed with today's date string ==========
-// For dev/replay: use random seed. For production: use getTodaySeed().
-function getGameSeed() {
-  return Math.random().toString(36).slice(2, 12);
-  // return getTodaySeed();
-}
+const MODES = {
+  UNLIMITED: 'unlimited',
+  DAILY: 'daily',
+  BLITZ: 'blitz',
+};
+
+const MODE_LABELS = {
+  unlimited: 'Unlimited',
+  daily: 'Daily',
+  blitz: 'Blitz',
+};
+
+const MODE_DESCRIPTIONS = {
+  unlimited: 'Play as many games as you like.',
+  daily: 'One puzzle per day. Same for everyone.',
+  blitz: '60 seconds. As many rounds as you can.',
+};
 
 function getTodaySeed() {
   const d = new Date();
@@ -201,25 +213,31 @@ function getYdsRatioThreshold(position) {
   return position === 'QB' ? 0.70 : 0.55;
 }
 
-function generateMatchup(pool, stats, usedKeys, rng, position) {
+function generateMatchup(pool, stats, usedKeys, rng, position, allowReuseWhenEmpty = false) {
   const list = pool.flat();
   const minRatio = getYdsRatioThreshold(position);
-  const validPairs = [];
+  let validPairs = [];
 
-  for (let i = 0; i < list.length; i++) {
-    for (let j = i + 1; j < list.length; j++) {
-      const a = list[i];
-      const b = list[j];
-
-      if (sameTeamSeason(a, b)) continue;
-      if (usedKeys.has(playerKey(a)) || usedKeys.has(playerKey(b))) continue;
-      if (getYdsRatio(a, b, a.Pos) < minRatio) continue;
-      if (hasStatTie(a, b, stats)) continue;
-
-      validPairs.push([a, b]);
+  function collectPairs(keys) {
+    const pairs = [];
+    for (let i = 0; i < list.length; i++) {
+      for (let j = i + 1; j < list.length; j++) {
+        const a = list[i];
+        const b = list[j];
+        if (sameTeamSeason(a, b)) continue;
+        if (keys.has(playerKey(a)) || keys.has(playerKey(b))) continue;
+        if (getYdsRatio(a, b, a.Pos) < minRatio) continue;
+        if (hasStatTie(a, b, stats)) continue;
+        pairs.push([a, b]);
+      }
     }
+    return pairs;
   }
 
+  validPairs = collectPairs(usedKeys);
+  if (validPairs.length === 0 && allowReuseWhenEmpty) {
+    validPairs = collectPairs(new Set());
+  }
   if (validPairs.length === 0) return null;
 
   const idx = Math.floor(rng() * validPairs.length);
@@ -227,19 +245,23 @@ function generateMatchup(pool, stats, usedKeys, rng, position) {
   return rng() < 0.5 ? [a, b] : [b, a];
 }
 
-// WR vs TE: alternate by game (dev) or by calendar day (daily)
-function getRound3Position(seed, rng) {
-  // DAILY MODE: use calendar day for WR/TE alternation
-  // return (new Date().getDate()) % 2 === 0 ? 'WR' : 'TE';
-
-  // Dev: alternate by seed
+function getRound3Position(seed, rng, mode) {
+  if (mode === MODES.DAILY) {
+    return (new Date().getDate()) % 2 === 0 ? 'WR' : 'TE';
+  }
   const h = seed.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
   return h % 2 === 0 ? 'WR' : 'TE';
 }
 
 // --- DOM ---
+const startScreen = document.getElementById('start-screen');
 const roundScreen = document.getElementById('round-screen');
 const resultsScreen = document.getElementById('results-screen');
+const startModeLabel = document.getElementById('start-mode-label');
+const startModeDesc = document.getElementById('start-mode-desc');
+const startBtn = document.getElementById('start-btn');
+const menuBtn = document.getElementById('menu-btn');
+const menuOverlay = document.getElementById('menu-overlay');
 const positionLabel = document.getElementById('position-label');
 const playerAName = document.getElementById('player-a-name');
 const playerAMeta = document.getElementById('player-a-meta');
@@ -247,7 +269,9 @@ const playerBName = document.getElementById('player-b-name');
 const playerBMeta = document.getElementById('player-b-meta');
 const statPicks = document.getElementById('stat-picks');
 const roundIndicator = document.getElementById('round-indicator');
+const blitzTimerEl = document.getElementById('blitz-timer');
 const confirmBtn = document.getElementById('confirm-btn');
+const comeBackTomorrow = document.getElementById('come-back-tomorrow');
 const resultsScore = document.getElementById('results-score');
 const resultsStreak = document.getElementById('results-streak');
 const shareGrid = document.getElementById('share-grid');
@@ -259,6 +283,7 @@ const modalClose = document.getElementById('modal-close');
 
 let state = {
   data: null,
+  mode: MODES.UNLIMITED,
   seed: null,
   rng: null,
   rounds: [],
@@ -266,19 +291,61 @@ let state = {
   picks: [],
   score: 0,
   roundScores: [],
+  blitzTimeLeft: 60,
+  blitzTimerId: null,
+  blitzUsedKeys: null,
 };
 
-function initGame() {
-  state.seed = getGameSeed();
+function getGameSeed(mode) {
+  if (mode === MODES.DAILY) return getTodaySeed();
+  return Math.random().toString(36).slice(2, 12);
+}
+
+function hasPlayedDailyToday() {
+  const today = new Date().toDateString();
+  return localStorage.getItem('betterseason_lastDate') === today &&
+    localStorage.getItem('betterseason_dailyScore') != null;
+}
+
+function getStoredDailyScore() {
+  return localStorage.getItem('betterseason_dailyScore') || '0';
+}
+
+function storeDailyScore(score) {
+  localStorage.setItem('betterseason_dailyScore', String(score));
+}
+
+function initGame(mode) {
+  state.mode = mode;
+  state.seed = getGameSeed(mode);
   state.rng = createSeededRandom(state.seed);
   state.rounds = [];
   state.currentRound = 0;
   state.picks = [];
   state.score = 0;
   state.roundScores = [];
+  state.blitzUsedKeys = mode === MODES.BLITZ ? new Map() : null;
 
-  const posOrder = ['QB', 'RB', getRound3Position(state.seed, state.rng)];
+  startScreen.classList.remove('active');
+  roundScreen.classList.add('active');
+  resultsScreen.classList.remove('active');
+  blitzTimerEl.classList.remove('visible');
 
+  if (mode === MODES.BLITZ) {
+    state.blitzTimeLeft = 60;
+    blitzTimerEl.classList.add('visible');
+    startBlitzTimer();
+    addBlitzRound();
+    renderRound();
+    return;
+  }
+
+  if (mode === MODES.DAILY && hasPlayedDailyToday()) {
+    showDailyAlreadyPlayed();
+    return;
+  }
+
+  const posOrder = ['QB', 'RB', getRound3Position(state.seed, state.rng, mode)];
   const usedKeys = new Set();
 
   for (let r = 0; r < 3; r++) {
@@ -287,7 +354,6 @@ function initGame() {
     const pool = state.data[pos];
     const matchup = generateMatchup(pool, stats, usedKeys, state.rng, pos);
     if (!matchup) {
-      console.error('Failed to generate matchup for', pos);
       const a = pool[0], b = pool[1];
       usedKeys.add(playerKey(a));
       usedKeys.add(playerKey(b));
@@ -303,8 +369,56 @@ function initGame() {
   }
 
   renderRound();
-  roundScreen.classList.add('active');
-  resultsScreen.classList.remove('active');
+}
+
+function startBlitzTimer() {
+  if (state.blitzTimerId) clearInterval(state.blitzTimerId);
+  blitzTimerEl.textContent = state.blitzTimeLeft;
+  state.blitzTimerId = setInterval(() => {
+    state.blitzTimeLeft--;
+    blitzTimerEl.textContent = Math.max(0, state.blitzTimeLeft);
+    if (state.blitzTimeLeft <= 0) {
+      clearInterval(state.blitzTimerId);
+      state.blitzTimerId = null;
+      endBlitz();
+    }
+  }, 1000);
+}
+
+function addBlitzRound() {
+  const posOrder = ['QB', 'RB', 'WR', 'TE'];
+  const roundIndex = state.rounds.length;
+  const pos = posOrder[roundIndex % 4];
+  const stats = pickStatsForRound(pos, state.rng);
+  const pool = state.data[pos];
+  const usedKeys = state.blitzUsedKeys.get(pos) || new Set();
+  const matchup = generateMatchup(pool, stats, usedKeys, state.rng, pos, true);
+  if (!matchup) return;
+  const [a, b] = matchup;
+  if (!state.blitzUsedKeys.has(pos)) state.blitzUsedKeys.set(pos, new Set());
+  state.blitzUsedKeys.get(pos).add(playerKey(a));
+  state.blitzUsedKeys.get(pos).add(playerKey(b));
+  const correct = stats.map(s => isBetter(a[s], b[s], s) ? 'A' : 'B');
+  state.rounds.push({ position: pos, stats, playerA: a, playerB: b, correct });
+}
+
+function endBlitz() {
+  showResults();
+}
+
+function showDailyAlreadyPlayed() {
+  startScreen.classList.remove('active');
+  roundScreen.classList.remove('active');
+  resultsScreen.classList.add('active');
+  const score = parseInt(getStoredDailyScore(), 10);
+  resultsScore.textContent = `${score}/9`;
+  resultsStreak.textContent = `Streak: ${getStreak()} day${getStreak() !== 1 ? 's' : ''}`;
+  comeBackTomorrow.classList.add('visible');
+  shareGrid.textContent = buildShareGridForMode('daily', score, null);
+  copyBtn.onclick = () => {
+    window.location.href = 'sms:?body=' + encodeURIComponent(buildShareGridForMode('daily', score, null));
+  };
+  newGameBtn.style.display = 'none';
 }
 
 function renderRound() {
@@ -312,7 +426,11 @@ function renderRound() {
   if (!r) return;
 
   positionLabel.textContent = r.position;
-  roundIndicator.textContent = `Round ${state.currentRound + 1}/3`;
+  if (state.mode === MODES.BLITZ) {
+    roundIndicator.textContent = `Round ${state.currentRound + 1}`;
+  } else {
+    roundIndicator.textContent = `Round ${state.currentRound + 1}/3`;
+  }
   playerAName.textContent = r.playerA.Player;
   playerAMeta.textContent = `${r.playerA.Team} · ${r.playerA.season}`;
   playerBName.textContent = r.playerB.Player;
@@ -402,8 +520,14 @@ function handleConfirm() {
   state.score += roundScore;
   state.roundScores.push({ position: r.position, score: roundScore, total: 3 });
 
-  confirmBtn.textContent = state.currentRound < 2 ? 'Next round →' : 'See results';
-  confirmBtn.onclick = goNext;
+  if (state.mode === MODES.BLITZ) {
+    if (state.blitzTimeLeft <= 0) return;
+    confirmBtn.textContent = 'Next round →';
+    confirmBtn.onclick = goNextBlitz;
+  } else {
+    confirmBtn.textContent = state.currentRound < 2 ? 'Next round →' : 'See results';
+    confirmBtn.onclick = goNext;
+  }
 }
 
 function goNext() {
@@ -415,12 +539,27 @@ function goNext() {
       roundScreen.classList.add('active');
     }, 150);
   } else {
+    if (state.mode === MODES.DAILY) {
+      storeDailyScore(state.score);
+    }
     updateStreak();
     showResults();
   }
 }
 
+function goNextBlitz() {
+  state.currentRound++;
+  if (state.blitzTimeLeft <= 0) return;
+  addBlitzRound();
+  roundScreen.classList.remove('active');
+  setTimeout(() => {
+    renderRound();
+    roundScreen.classList.add('active');
+  }, 100);
+}
+
 function updateStreak() {
+  if (state.mode === MODES.BLITZ) return;
   const key = 'betterseason_streak';
   const dateKey = 'betterseason_lastDate';
   const today = new Date().toDateString();
@@ -428,7 +567,7 @@ function updateStreak() {
   let streak = parseInt(localStorage.getItem(key) || '0', 10);
   const last = localStorage.getItem(dateKey);
 
-  if (last === today) return; // already played today
+  if (last === today) return;
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
   const yesterdayStr = yesterday.toDateString();
@@ -444,33 +583,59 @@ function getStreak() {
   return parseInt(localStorage.getItem('betterseason_streak') || '0', 10);
 }
 
-function buildShareGrid() {
-  let grid = `🏈 Better Season\n\n`;
-  state.roundScores.forEach(({ position, score, total }) => {
-    const correct = '✅'.repeat(score);
-    const wrong = '❌'.repeat(total - score);
-    grid += `${position}  ${correct}${wrong}  ${score}/${total}\n`;
-  });
-  grid += `\n${state.score}/9 — betterseason `;
+function buildShareGridForMode(mode, score, roundScores) {
+  const modeStr = mode === 'daily' ? 'Daily' : mode === 'blitz' ? 'Blitz' : 'Unlimited';
+  if (mode === 'blitz') {
+    return `🏈 Better Season — ${modeStr} — ${score} pts — betterseason `;
+  }
+  let grid = `🏈 Better Season — ${modeStr}\n\n`;
+  if (roundScores && roundScores.length > 0) {
+    roundScores.forEach(({ position, score: rs, total }) => {
+      const correct = '✅'.repeat(rs);
+      const wrong = '❌'.repeat(total - rs);
+      grid += `${position}  ${correct}${wrong}  ${rs}/${total}\n`;
+    });
+  }
+  grid += `\n${score}/9 — betterseason `;
   return grid;
 }
 
+function buildShareGrid() {
+  return buildShareGridForMode(state.mode, state.score, state.roundScores);
+}
+
 function showResults() {
+  if (state.blitzTimerId) {
+    clearInterval(state.blitzTimerId);
+    state.blitzTimerId = null;
+  }
+  blitzTimerEl.classList.remove('visible');
+
   roundScreen.classList.remove('active');
   resultsScreen.classList.add('active');
 
-  resultsScore.textContent = `${state.score}/9`;
-  resultsStreak.textContent = `Streak: ${getStreak()} day${getStreak() !== 1 ? 's' : ''}`;
+  if (state.mode === MODES.BLITZ) {
+    resultsScore.textContent = state.score + ' pts';
+    resultsStreak.textContent = '';
+  } else {
+    resultsScore.textContent = `${state.score}/9`;
+    resultsStreak.textContent = `Streak: ${getStreak()} day${getStreak() !== 1 ? 's' : ''}`;
+  }
+
+  comeBackTomorrow.classList.remove('visible');
   shareGrid.textContent = buildShareGrid();
 
   copyBtn.onclick = () => {
-    const text = buildShareGrid();
-    const smsUrl = 'sms:?body=' + encodeURIComponent(text);
-    window.location.href = smsUrl;
+    window.location.href = 'sms:?body=' + encodeURIComponent(buildShareGrid());
   };
 
+  newGameBtn.style.display = state.mode === MODES.DAILY ? 'none' : 'inline-flex';
   newGameBtn.onclick = () => {
-    initGame();
+    if (state.mode === MODES.BLITZ) {
+      goToStartScreen();
+    } else {
+      initGame(state.mode);
+    }
   };
 }
 
@@ -493,11 +658,61 @@ function closeHowToModal() {
   howToModal.setAttribute('aria-hidden', 'true');
 }
 
+function goToStartScreen() {
+  startScreen.classList.add('active');
+  roundScreen.classList.remove('active');
+  resultsScreen.classList.remove('active');
+  updateStartScreen();
+}
+
+function updateStartScreen() {
+  startModeLabel.textContent = MODE_LABELS[state.mode];
+  startModeDesc.textContent = MODE_DESCRIPTIONS[state.mode];
+}
+
+function setupMenu() {
+  menuBtn.addEventListener('click', () => {
+    const isOpen = menuOverlay.classList.toggle('open');
+    menuBtn.setAttribute('aria-expanded', isOpen);
+  });
+  menuOverlay.addEventListener('click', (e) => {
+    if (e.target === menuOverlay) {
+      menuOverlay.classList.remove('open');
+      menuBtn.setAttribute('aria-expanded', 'false');
+    }
+  });
+  document.querySelectorAll('.menu-option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const mode = btn.dataset.mode;
+      state.mode = mode;
+      menuOverlay.classList.remove('open');
+      menuBtn.setAttribute('aria-expanded', 'false');
+      btn.parentElement.querySelectorAll('.menu-option').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      updateStartScreen();
+      goToStartScreen();
+    });
+  });
+  document.querySelector(`.menu-option[data-mode="unlimited"]`).classList.add('selected');
+}
+
+function setupStartBtn() {
+  startBtn.addEventListener('click', () => {
+    if (state.mode === MODES.DAILY && hasPlayedDailyToday()) {
+      showDailyAlreadyPlayed();
+    } else {
+      initGame(state.mode);
+    }
+  });
+}
+
 async function main() {
   try {
     setupHowToPlay();
+    setupMenu();
+    setupStartBtn();
     state.data = await loadData();
-    initGame();
+    goToStartScreen();
   } catch (e) {
     document.body.innerHTML = `
       <div style="padding:2rem;text-align:center;color:#f0f0f0;">
