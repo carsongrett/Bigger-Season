@@ -189,7 +189,16 @@ body::before {
   text-align: center;
 }
 
-.position-badge {
+.header-badges {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.position-badge,
+.round-badge {
   display: inline-block;
   font-family: 'Bebas Neue', sans-serif;
   font-size: 1.25rem;
@@ -287,11 +296,12 @@ body::before {
 }
 
 .stat-label {
-  font-size: 0.75rem;
+  font-size: 0.9rem;
   font-weight: 700;
   color: #a0a0a0;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  text-align: center;
 }
 
 .stat-buttons {
@@ -435,6 +445,10 @@ body::before {
 }
 
 .copy-btn, .new-game-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
   padding: 0.75rem 1.5rem;
   font-size: 0.95rem;
   font-weight: 700;
@@ -444,6 +458,10 @@ body::before {
   border-radius: 10px;
   cursor: pointer;
   transition: all 0.2s ease;
+}
+
+.copy-btn .share-icon {
+  flex-shrink: 0;
 }
 
 .copy-btn:hover, .new-game-btn:hover {

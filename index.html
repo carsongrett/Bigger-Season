@@ -30,7 +30,10 @@
       <!-- Round screen -->
       <section id="round-screen" class="screen active">
         <div class="round-header">
-          <span class="position-badge" id="position-label"></span>
+          <div class="header-badges">
+            <span class="position-badge" id="position-label"></span>
+            <span class="round-badge" id="round-indicator"></span>
+          </div>
           <p class="round-instruction">Who had the better season?</p>
         </div>
         <div class="matchup">
@@ -56,7 +59,10 @@
         <div class="results-score" id="results-score"></div>
         <div class="results-streak" id="results-streak"></div>
         <div class="share-grid" id="share-grid"></div>
-        <button class="copy-btn" id="copy-btn">Copy to clipboard</button>
+        <button class="copy-btn" id="copy-btn">
+          <svg class="share-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Share
+        </button>
         <!-- DEV ONLY: Remove at launch -->
         <button class="new-game-btn" id="new-game-btn">New Game</button>
       </section>

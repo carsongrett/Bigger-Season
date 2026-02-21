@@ -55,9 +55,16 @@ function formatStatValue(val, stat) {
   return n.toFixed(1);
 }
 
+const NAME_SUFFIXES = new Set(['II', 'III', 'IV', 'Jr', 'Jr.', 'Sr', 'Sr.']);
+
 function getLastName(player) {
   const parts = (player.Player || '').trim().split(/\s+/);
-  return parts.length > 1 ? parts[parts.length - 1] : player.Player || '?';
+  if (parts.length <= 1) return player.Player || '?';
+  const last = parts[parts.length - 1];
+  if (NAME_SUFFIXES.has(last)) {
+    return parts.length > 2 ? parts[parts.length - 2] : parts[0];
+  }
+  return last;
 }
 
 function getStatDisplayName(col, position) {
@@ -239,6 +246,7 @@ const playerAMeta = document.getElementById('player-a-meta');
 const playerBName = document.getElementById('player-b-name');
 const playerBMeta = document.getElementById('player-b-meta');
 const statPicks = document.getElementById('stat-picks');
+const roundIndicator = document.getElementById('round-indicator');
 const confirmBtn = document.getElementById('confirm-btn');
 const resultsScore = document.getElementById('results-score');
 const resultsStreak = document.getElementById('results-streak');
@@ -304,6 +312,7 @@ function renderRound() {
   if (!r) return;
 
   positionLabel.textContent = r.position;
+  roundIndicator.textContent = `Round ${state.currentRound + 1}/3`;
   playerAName.textContent = r.playerA.Player;
   playerAMeta.textContent = `${r.playerA.Team} · ${r.playerA.season}`;
   playerBName.textContent = r.playerB.Player;
@@ -436,8 +445,7 @@ function getStreak() {
 }
 
 function buildShareGrid() {
-  const num = getGameNumber();
-  let grid = `🏈 Better Season #${num}\n\n`;
+  let grid = `🏈 Better Season\n\n`;
   state.roundScores.forEach(({ position, score, total }) => {
     const correct = '✅'.repeat(score);
     const wrong = '❌'.repeat(total - score);
@@ -456,9 +464,9 @@ function showResults() {
   shareGrid.textContent = buildShareGrid();
 
   copyBtn.onclick = () => {
-    navigator.clipboard.writeText(buildShareGrid());
-    copyBtn.textContent = 'Copied!';
-    setTimeout(() => copyBtn.textContent = 'Copy to clipboard', 1500);
+    const text = buildShareGrid();
+    const smsUrl = 'sms:?body=' + encodeURIComponent(text);
+    window.location.href = smsUrl;
   };
 
   newGameBtn.onclick = () => {
