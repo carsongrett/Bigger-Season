@@ -42,14 +42,14 @@ const MODE_LABELS = {
   unlimited: 'Unlimited',
   daily: 'Daily',
   blitz: 'Blitz',
-  rookie_qb: 'Rookie QB Seasons',
+  rookie_qb: 'Rookie QBs',
 };
 
 const MODE_DESCRIPTIONS = {
   unlimited: 'Daily game with new players each time.',
   daily: 'The classic. Resets at midnight.',
   blitz: '60 seconds. As many rounds as you can.',
-  rookie_qb: 'Rookie QB seasons. 3 rounds, 4 stats each. Daily.',
+  rookie_qb: 'Rookies from 2016-2025.',
 };
 
 const NFL_ONLY_MODES = ['rookie_qb'];
@@ -827,7 +827,7 @@ const SHARE_SITE_URL = 'https://betterseason.com';
 function buildShareGridForMode(mode, score, roundScores, sport) {
   const sportKey = sport || state.sport;
   const emoji = SPORT_EMOJI[sportKey] || '🏈';
-  const modeStr = mode === 'daily' ? 'Daily' : mode === 'blitz' ? 'Blitz' : mode === 'rookie_qb' ? 'Rookie QB Seasons' : 'Unlimited';
+  const modeStr = mode === 'daily' ? 'Daily' : mode === 'blitz' ? 'Blitz' : mode === 'rookie_qb' ? 'Rookie QBs' : 'Unlimited';
   const total = mode === 'rookie_qb' ? 12 : 9;
   const suffix = ` — ${SHARE_SITE_URL}`;
   if (mode === 'blitz') {
