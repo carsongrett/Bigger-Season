@@ -42,7 +42,7 @@ const MODE_LABELS = {
   unlimited: 'Unlimited',
   daily: 'Daily',
   blitz: 'Blitz',
-  rookie_qb: 'Rookie QBs',
+  rookie_qb: 'Rookie QBs (daily)',
 };
 
 const MODE_DESCRIPTIONS = {
@@ -441,7 +441,8 @@ const comeBackTomorrow = document.getElementById('come-back-tomorrow');
 const resultsScore = document.getElementById('results-score');
 const resultsStreak = document.getElementById('results-streak');
 const shareGrid = document.getElementById('share-grid');
-const copyBtn = document.getElementById('copy-btn');
+const shareSmsBtn = document.getElementById('share-sms-btn');
+const shareXBtn = document.getElementById('share-x-btn');
 const newGameBtn = document.getElementById('new-game-btn');
 const resultsModeButtons = document.getElementById('results-mode-buttons');
 const resultsSportToolbar = document.getElementById('results-sport-toolbar');
@@ -650,9 +651,9 @@ function showDailyAlreadyPlayed() {
   shareGrid.textContent = buildShareGridForMode(state.mode, score, null, state.sport);
   renderResultsModeButtons(state.mode);
   renderResultsSportToolbar();
-  copyBtn.onclick = () => {
-    window.location.href = 'sms:?body=' + encodeURIComponent(buildShareGridForMode(state.mode, score, null, state.sport));
-  };
+  const shareText = buildShareGridForMode(state.mode, score, null, state.sport);
+  shareSmsBtn.onclick = () => { window.location.href = 'sms:?body=' + encodeURIComponent(shareText); };
+  shareXBtn.onclick = () => { window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(shareText)); };
   newGameBtn.style.display = 'none';
 }
 
@@ -820,28 +821,34 @@ function getStreak(sport, mode) {
   return parseInt(localStorage.getItem(`${prefix}_streak`) || '0', 10);
 }
 
-const SPORT_EMOJI = { nfl: '🏈', nba: '🏀', mlb: '⚾' };
+const SHARE_URL_PLACEHOLDER = '';
 
-const SHARE_SITE_URL = 'https://betterseason.com';
-
-function buildShareGridForMode(mode, score, roundScores, sport) {
-  const sportKey = sport || state.sport;
-  const emoji = SPORT_EMOJI[sportKey] || '🏈';
-  const modeStr = mode === 'daily' ? 'Daily' : mode === 'blitz' ? 'Blitz' : mode === 'rookie_qb' ? 'Rookie QBs' : 'Unlimited';
+function buildShareText(mode, score, roundScores, sport) {
+  const modeStr = mode === 'daily' ? 'Daily' : mode === 'blitz' ? 'Blitz' : mode === 'rookie_qb' ? 'Rookie QBs (daily)' : 'Unlimited';
   const total = mode === 'rookie_qb' ? 12 : 9;
-  const suffix = ` — ${SHARE_SITE_URL}`;
+  const scoreStr = mode === 'blitz' ? `${score} pts` : `${score}/${total}pts`;
+  const urlSuffix = SHARE_URL_PLACEHOLDER ? ` — ${SHARE_URL_PLACEHOLDER}` : '';
   if (mode === 'blitz') {
-    return `${emoji} ${score} pts in blitz${suffix}`;
+    return `${scoreStr} — ${modeStr}${urlSuffix}`;
   }
-  let grid = `${emoji}  ${score}/${total}pts — ${modeStr}\n\n`;
+  let text = `${scoreStr} — ${modeStr}`;
   if (roundScores && roundScores.length > 0) {
-    roundScores.forEach(({ position, score: rs, total }) => {
+    text += '\n\n';
+    roundScores.forEach(({ position, score: rs, total: t }) => {
       const correct = '✅'.repeat(rs);
-      const wrong = '❌'.repeat(total - rs);
-      grid += `${position}  ${correct}${wrong}  ${rs}/${total}\n`;
+      const wrong = '❌'.repeat(t - rs);
+      if (mode === 'rookie_qb') {
+        text += `${correct}${wrong}\n`;
+      } else {
+        text += `${position}  ${correct}${wrong}  ${rs}/${t}\n`;
+      }
     });
   }
-  return grid.trimEnd() + suffix;
+  return text.trimEnd() + urlSuffix;
+}
+
+function buildShareGridForMode(mode, score, roundScores, sport) {
+  return buildShareText(mode, score, roundScores, sport);
 }
 
 function buildShareGrid() {
@@ -872,9 +879,9 @@ function showResults() {
   renderResultsModeButtons(state.mode);
   renderResultsSportToolbar();
 
-  copyBtn.onclick = () => {
-    window.location.href = 'sms:?body=' + encodeURIComponent(buildShareGrid());
-  };
+  const shareText = buildShareGrid();
+  shareSmsBtn.onclick = () => { window.location.href = 'sms:?body=' + encodeURIComponent(shareText); };
+  shareXBtn.onclick = () => { window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(shareText)); };
 
   newGameBtn.style.display = (state.mode === MODES.DAILY || state.mode === MODES.ROOKIE_QB) ? 'none' : 'inline-flex';
   newGameBtn.onclick = () => {

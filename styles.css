@@ -758,12 +758,16 @@ body::before {
   border-color: rgba(245, 158, 11, 0.4);
 }
 
-.copy-btn, .new-game-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+.share-buttons {
+  display: flex;
   gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
+  justify-content: center;
+}
+
+.share-btn {
+  flex: 1;
+  max-width: 140px;
+  padding: 0.75rem 1rem;
   font-size: 0.95rem;
   font-weight: 700;
   border: 2px solid rgba(255, 255, 255, 0.15);
@@ -774,19 +778,25 @@ body::before {
   transition: all 0.2s ease;
 }
 
-.copy-btn .share-icon {
-  flex-shrink: 0;
-}
-
-.copy-btn:hover, .new-game-btn:hover {
+.share-btn:hover {
   border-color: rgba(255, 255, 255, 0.3);
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.06) 100%);
 }
 
 .new-game-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   margin-top: 0.5rem;
-  border-color: #3b82f6;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  border: 2px solid #3b82f6;
   background: linear-gradient(180deg, rgba(59, 130, 246, 0.2) 0%, rgba(59, 130, 246, 0.1) 100%);
+  color: #f0f0f0;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .new-game-btn:hover {

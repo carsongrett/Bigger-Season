@@ -20,9 +20,9 @@
     <div class="modal-overlay" id="how-to-modal" aria-hidden="true">
       <div class="modal">
         <h2>How to Play</h2>
-        <p>Pick which player had the better stat in each category. Three rounds — QBs, RBs, and WRs or TEs.</p>
-        <p>One point per correct pick. 9 total.</p>
-        <p>Data from 2023–2025 seasons.</p>
+        <p>Pick which player had the better stat in each category. Rounds and stats vary by sport and mode.</p>
+        <p>One point per correct pick.</p>
+        <p>Daily games reset at midnight — same puzzle for everyone.</p>
         <button class="modal-close" id="modal-close">Got it</button>
       </div>
     </div>
@@ -63,7 +63,7 @@
               <span class="mode-card-desc">60 seconds. As many rounds as you can.</span>
             </button>
             <button class="mode-card mode-card--nfl-only" data-mode="rookie_qb">
-              <span class="mode-card-title">Rookie QBs</span>
+              <span class="mode-card-title">Rookie QBs (daily)</span>
               <span class="mode-card-desc">Rookies from 2016-2025.</span>
             </button>
           </div>
@@ -107,10 +107,10 @@
         <div class="results-streak" id="results-streak"></div>
         <p class="come-back-tomorrow" id="come-back-tomorrow">Come back tomorrow!</p>
         <div class="share-grid" id="share-grid"></div>
-        <button class="copy-btn" id="copy-btn">
-          <svg class="share-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-          Share
-        </button>
+        <div class="share-buttons">
+          <button class="share-btn" id="share-sms-btn">SMS</button>
+          <button class="share-btn" id="share-x-btn">X</button>
+        </div>
         <button class="new-game-btn" id="new-game-btn">New Game</button>
       </section>
     </main>
