@@ -767,12 +767,15 @@ function getStreak(sport) {
 
 const SPORT_EMOJI = { nfl: '🏈', nba: '🏀', mlb: '⚾' };
 
+const SHARE_SITE_URL = 'https://betterseason.com';
+
 function buildShareGridForMode(mode, score, roundScores, sport) {
   const sportKey = sport || state.sport;
   const emoji = SPORT_EMOJI[sportKey] || '🏈';
   const modeStr = mode === 'daily' ? 'Daily' : mode === 'blitz' ? 'Blitz' : 'Unlimited';
+  const suffix = ` — ${SHARE_SITE_URL}`;
   if (mode === 'blitz') {
-    return `${emoji} ${score} pts in blitz — betterseason `;
+    return `${emoji} ${score} pts in blitz${suffix}`;
   }
   let grid = `${emoji}  ${score}/9pts — ${modeStr}\n\n`;
   if (roundScores && roundScores.length > 0) {
@@ -782,7 +785,7 @@ function buildShareGridForMode(mode, score, roundScores, sport) {
       grid += `${position}  ${correct}${wrong}  ${rs}/${total}\n`;
     });
   }
-  return grid.trimEnd();
+  return grid.trimEnd() + suffix;
 }
 
 function buildShareGrid() {
