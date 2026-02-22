@@ -35,19 +35,24 @@ const MODES = {
   UNLIMITED: 'unlimited',
   DAILY: 'daily',
   BLITZ: 'blitz',
+  ROOKIE_QB: 'rookie_qb',
 };
 
 const MODE_LABELS = {
   unlimited: 'Unlimited',
   daily: 'Daily',
   blitz: 'Blitz',
+  rookie_qb: 'Rookie QB Seasons',
 };
 
 const MODE_DESCRIPTIONS = {
   unlimited: 'Daily game with new players each time.',
   daily: 'The classic. Resets at midnight.',
   blitz: '60 seconds. As many rounds as you can.',
+  rookie_qb: 'Rookie QB seasons. 3 rounds, 4 stats each. Daily.',
 };
+
+const NFL_ONLY_MODES = ['rookie_qb'];
 
 function getTodaySeed() {
   const d = new Date();
@@ -85,9 +90,11 @@ const STAT_NAMES = {
   'Rate': 'Passer Rating',
   'Y/A': 'Yards Per Carry',
   'Rec': 'Receptions',
+  'Rush Yds': 'Rush Yards',
+  'Team Wins': 'Team Wins',
 };
 
-function formatStatValue(val, stat, sport) {
+function formatStatValue(val, stat, sport, mode) {
   const n = parseFloat(val);
   if (isNaN(n)) return String(val);
   if (sport === 'nba') {
@@ -120,8 +127,10 @@ const NBA_STAT_NAMES = {
   'AST /G': 'Assists Per Game',
 };
 
-function getStatDisplayName(col, position, sport) {
+function getStatDisplayName(col, position, sport, mode) {
   if (sport === 'nba') return NBA_STAT_NAMES[col] || col;
+  if (col === 'Rush Yds') return 'Rush Yards';
+  if (col === 'Team Wins') return 'Team Wins';
   if (col === 'Yds') {
     if (position === 'QB') return 'Passing Yards';
     if (position === 'RB') return 'Rushing Yards';
@@ -136,13 +145,13 @@ function getStatDisplayName(col, position, sport) {
   return STAT_NAMES[col] || col;
 }
 
-// Lower is better (only Int for NFL)
+// Lower is better (Int for NFL and Rookie QB)
 const LOWER_BETTER = new Set(['Int']);
 
-function isBetter(valA, valB, statCol, sport) {
+function isBetter(valA, valB, statCol, sport, mode) {
   const a = parseFloat(valA);
   const b = parseFloat(valB);
-  if (sport === 'nfl' && LOWER_BETTER.has(statCol)) return a < b;
+  if ((sport === 'nfl' || mode === MODES.ROOKIE_QB) && LOWER_BETTER.has(statCol)) return a < b;
   return a > b;
 }
 
@@ -154,6 +163,18 @@ const NFL_FILES = [
 ];
 
 const NBA_FILES = ['basketball_2026'];
+
+const ROOKIE_QB_FILE = 'rookie qbs 2016-2025.csv';
+const ROOKIE_QB_STAT_POOL = ['TD', 'Int', 'Rush Yds', 'Team Wins'];
+
+function pickRookieQBStats(rng) {
+  const others = [...ROOKIE_QB_STAT_POOL];
+  for (let i = others.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [others[i], others[j]] = [others[j], others[i]];
+  }
+  return ['Yds', others[0], others[1], others[2]];
+}
 
 async function loadData() {
   const all = { nfl: {}, nba: {} };
@@ -212,6 +233,26 @@ async function loadData() {
       console.error(`Failed to load ${f}.csv:`, err);
       throw new Error(`Could not load ${f}.csv: ${err.message}`);
     }
+  }
+
+  try {
+    const res = await fetch(`data/${encodeURIComponent(ROOKIE_QB_FILE)}`);
+    if (!res.ok) throw new Error(`${ROOKIE_QB_FILE}: ${res.status}`);
+    const text = await res.text();
+    const lines = text.trim().split('\n');
+    const headers = lines[0].split(',').map(h => h.trim());
+    const rows = [];
+    for (let i = 1; i < lines.length; i++) {
+      const vals = parseCSVLine(lines[i]);
+      const row = {};
+      headers.forEach((h, j) => row[h] = vals[j] || '');
+      row.season = parseInt(row.Season || row.season || '0', 10);
+      rows.push(row);
+    }
+    all.nfl.ROOKIE_QB = rows;
+  } catch (err) {
+    console.error(`Failed to load ${ROOKIE_QB_FILE}:`, err);
+    throw new Error(`Could not load ${ROOKIE_QB_FILE}: ${err.message}`);
   }
 
   return all;
@@ -426,29 +467,30 @@ let state = {
 };
 
 function getGameSeed(mode) {
-  if (mode === MODES.DAILY) return getTodaySeed();
+  if (mode === MODES.DAILY || mode === MODES.ROOKIE_QB) return getTodaySeed();
   return Math.random().toString(36).slice(2, 12);
 }
 
-function getDailyKey(sport) {
+function getDailyKey(sport, mode) {
+  if (mode === MODES.ROOKIE_QB) return 'betterseason_rookieqb';
   const suffix = sport === 'nfl' ? '' : `_${sport}`;
   return `betterseason${suffix}`;
 }
 
-function hasPlayedDailyToday(sport) {
-  const key = getDailyKey(sport);
+function hasPlayedDailyToday(sport, mode) {
+  const key = getDailyKey(sport, mode);
   const today = new Date().toDateString();
   return localStorage.getItem(`${key}_lastDate`) === today &&
     localStorage.getItem(`${key}_dailyScore`) != null;
 }
 
-function getStoredDailyScore(sport) {
-  const key = getDailyKey(sport);
+function getStoredDailyScore(sport, mode) {
+  const key = getDailyKey(sport, mode);
   return localStorage.getItem(`${key}_dailyScore`) || '0';
 }
 
-function storeDailyScore(score, sport) {
-  const key = getDailyKey(sport);
+function storeDailyScore(score, sport, mode) {
+  const key = getDailyKey(sport, mode);
   localStorage.setItem(`${key}_dailyScore`, String(score));
 }
 
@@ -462,6 +504,7 @@ function initGame(mode) {
   state.score = 0;
   state.roundScores = [];
   state.blitzUsedKeys = mode === MODES.BLITZ ? new Map() : null;
+  state.totalPoints = mode === MODES.ROOKIE_QB ? 12 : 9;
 
   startScreen.classList.remove('active');
   roundScreen.classList.add('active');
@@ -478,18 +521,26 @@ function initGame(mode) {
     return;
   }
 
-  if (mode === MODES.DAILY && hasPlayedDailyToday(state.sport)) {
+  if ((mode === MODES.DAILY || mode === MODES.ROOKIE_QB) && hasPlayedDailyToday(state.sport, mode)) {
     showDailyAlreadyPlayed();
     return;
   }
 
-  state.data = state.allData[state.sport];
-  const posOrder = getPositionOrder(state.sport, state.seed, state.rng, mode);
+  const isRookieQB = mode === MODES.ROOKIE_QB;
+  if (isRookieQB) {
+    state.data = { QB: state.allData.nfl.ROOKIE_QB };
+  } else {
+    state.data = state.allData[state.sport];
+  }
+
+  const posOrder = isRookieQB ? ['QB', 'QB', 'QB'] : getPositionOrder(state.sport, state.seed, state.rng, mode);
   const usedKeys = new Set();
+  const statsPerRound = isRookieQB ? 4 : 3;
+  const totalPoints = isRookieQB ? 12 : 9;
 
   for (let r = 0; r < 3; r++) {
     const pos = posOrder[r];
-    const stats = pickStatsForRound(pos, state.rng, state.sport);
+    const stats = isRookieQB ? pickRookieQBStats(state.rng) : pickStatsForRound(pos, state.rng, state.sport);
     const pool = state.data[pos];
     const matchup = generateMatchup(pool, stats, usedKeys, state.rng, pos, false, state.sport);
     if (!matchup) {
@@ -497,13 +548,13 @@ function initGame(mode) {
       const a = pool[0], b = pool[1];
       usedKeys.add(playerKey(a));
       usedKeys.add(playerKey(b));
-      const correct = stats.map(s => isBetter(a[s], b[s], s, state.sport) ? 'A' : 'B');
+      const correct = stats.map(s => isBetter(a[s], b[s], s, state.sport, mode) ? 'A' : 'B');
       state.rounds.push({ position: pos, stats, playerA: a, playerB: b, correct });
     } else {
       const [a, b] = matchup;
       usedKeys.add(playerKey(a));
       usedKeys.add(playerKey(b));
-      const correct = stats.map(s => isBetter(a[s], b[s], s, state.sport) ? 'A' : 'B');
+      const correct = stats.map(s => isBetter(a[s], b[s], s, state.sport, mode) ? 'A' : 'B');
       state.rounds.push({ position: pos, stats, playerA: a, playerB: b, correct });
     }
   }
@@ -541,7 +592,7 @@ function addBlitzRound() {
   if (!state.blitzUsedKeys.has(pos)) state.blitzUsedKeys.set(pos, new Set());
   state.blitzUsedKeys.get(pos).add(playerKey(a));
   state.blitzUsedKeys.get(pos).add(playerKey(b));
-  const correct = stats.map(s => isBetter(a[s], b[s], s, state.sport) ? 'A' : 'B');
+  const correct = stats.map(s => isBetter(a[s], b[s], s, state.sport, state.mode) ? 'A' : 'B');
   state.rounds.push({ position: pos, stats, playerA: a, playerB: b, correct });
 }
 
@@ -551,7 +602,10 @@ function endBlitz() {
 
 function renderResultsModeButtons(justPlayedMode) {
   resultsModeButtons.innerHTML = '';
-  const otherModes = [MODES.UNLIMITED, MODES.DAILY, MODES.BLITZ].filter(m => m !== justPlayedMode);
+  const allModes = state.sport === 'nfl'
+    ? [MODES.UNLIMITED, MODES.DAILY, MODES.BLITZ, MODES.ROOKIE_QB]
+    : [MODES.UNLIMITED, MODES.DAILY, MODES.BLITZ];
+  const otherModes = allModes.filter(m => m !== justPlayedMode);
   otherModes.forEach(mode => {
     const btn = document.createElement('button');
     btn.className = 'results-mode-btn';
@@ -588,15 +642,16 @@ function showDailyAlreadyPlayed() {
   startScreen.classList.remove('active');
   roundScreen.classList.remove('active');
   resultsScreen.classList.add('active');
-  const score = parseInt(getStoredDailyScore(), 10);
-  resultsScore.textContent = `${score}/9`;
-  resultsStreak.textContent = `Streak: ${getStreak(state.sport)} day${getStreak(state.sport) !== 1 ? 's' : ''}`;
+  const score = parseInt(getStoredDailyScore(state.sport, state.mode), 10);
+  const total = state.mode === MODES.ROOKIE_QB ? 12 : 9;
+  resultsScore.textContent = `${score}/${total}`;
+  resultsStreak.textContent = `Streak: ${getStreak(state.sport, state.mode)} day${getStreak(state.sport, state.mode) !== 1 ? 's' : ''}`;
   comeBackTomorrow.classList.add('visible');
-  shareGrid.textContent = buildShareGridForMode('daily', score, null, state.sport);
-  renderResultsModeButtons(MODES.DAILY);
+  shareGrid.textContent = buildShareGridForMode(state.mode, score, null, state.sport);
+  renderResultsModeButtons(state.mode);
   renderResultsSportToolbar();
   copyBtn.onclick = () => {
-    window.location.href = 'sms:?body=' + encodeURIComponent(buildShareGridForMode('daily', score, null, state.sport));
+    window.location.href = 'sms:?body=' + encodeURIComponent(buildShareGridForMode(state.mode, score, null, state.sport));
   };
   newGameBtn.style.display = 'none';
 }
@@ -624,7 +679,7 @@ function renderRound() {
 
   for (let i = 0; i < r.stats.length; i++) {
     const stat = r.stats[i];
-    const label = getStatDisplayName(stat, r.position, state.sport);
+    const label = getStatDisplayName(stat, r.position, state.sport, state.mode);
     const row = document.createElement('div');
     row.className = 'stat-row';
     row.dataset.statIndex = i;
@@ -679,9 +734,9 @@ function handleConfirm() {
     btnA.classList.remove('selected');
     btnB.classList.remove('selected');
 
-    const label = getStatDisplayName(stat, r.position, state.sport);
-    const valA = formatStatValue(r.playerA[stat], stat, state.sport);
-    const valB = formatStatValue(r.playerB[stat], stat, state.sport);
+    const label = getStatDisplayName(stat, r.position, state.sport, state.mode);
+    const valA = formatStatValue(r.playerA[stat], stat, state.sport, state.mode);
+    const valB = formatStatValue(r.playerB[stat], stat, state.sport, state.mode);
 
     btnA.textContent = valA;
     btnB.textContent = valB;
@@ -698,7 +753,7 @@ function handleConfirm() {
   });
 
   state.score += roundScore;
-  state.roundScores.push({ position: r.position, score: roundScore, total: 3 });
+  state.roundScores.push({ position: r.position, score: roundScore, total: r.stats.length });
 
   if (state.mode === MODES.BLITZ) {
     if (state.blitzTimeLeft <= 0) return;
@@ -720,7 +775,7 @@ function goNext() {
     }, 150);
   } else {
     if (state.mode === MODES.DAILY) {
-      storeDailyScore(state.score, state.sport);
+      storeDailyScore(state.score, state.sport, state.mode);
     }
     updateStreak();
     showResults();
@@ -740,7 +795,7 @@ function goNextBlitz() {
 
 function updateStreak() {
   if (state.mode === MODES.BLITZ) return;
-  const prefix = getDailyKey(state.sport);
+  const prefix = getDailyKey(state.sport, state.mode);
   const key = `${prefix}_streak`;
   const dateKey = `${prefix}_lastDate`;
   const today = new Date().toDateString();
@@ -760,8 +815,8 @@ function updateStreak() {
   localStorage.setItem(dateKey, today);
 }
 
-function getStreak(sport) {
-  const prefix = getDailyKey(sport || state.sport);
+function getStreak(sport, mode) {
+  const prefix = getDailyKey(sport || state.sport, mode || state.mode);
   return parseInt(localStorage.getItem(`${prefix}_streak`) || '0', 10);
 }
 
@@ -772,12 +827,13 @@ const SHARE_SITE_URL = 'https://betterseason.com';
 function buildShareGridForMode(mode, score, roundScores, sport) {
   const sportKey = sport || state.sport;
   const emoji = SPORT_EMOJI[sportKey] || '🏈';
-  const modeStr = mode === 'daily' ? 'Daily' : mode === 'blitz' ? 'Blitz' : 'Unlimited';
+  const modeStr = mode === 'daily' ? 'Daily' : mode === 'blitz' ? 'Blitz' : mode === 'rookie_qb' ? 'Rookie QB Seasons' : 'Unlimited';
+  const total = mode === 'rookie_qb' ? 12 : 9;
   const suffix = ` — ${SHARE_SITE_URL}`;
   if (mode === 'blitz') {
     return `${emoji} ${score} pts in blitz${suffix}`;
   }
-  let grid = `${emoji}  ${score}/9pts — ${modeStr}\n\n`;
+  let grid = `${emoji}  ${score}/${total}pts — ${modeStr}\n\n`;
   if (roundScores && roundScores.length > 0) {
     roundScores.forEach(({ position, score: rs, total }) => {
       const correct = '✅'.repeat(rs);
@@ -806,8 +862,9 @@ function showResults() {
     resultsScore.textContent = state.score + ' pts';
     resultsStreak.textContent = '';
   } else {
-    resultsScore.textContent = `${state.score}/9`;
-    resultsStreak.textContent = `Streak: ${getStreak(state.sport)} day${getStreak(state.sport) !== 1 ? 's' : ''}`;
+    const total = state.totalPoints || 9;
+    resultsScore.textContent = `${state.score}/${total}`;
+    resultsStreak.textContent = `Streak: ${getStreak(state.sport, state.mode)} day${getStreak(state.sport, state.mode) !== 1 ? 's' : ''}`;
   }
 
   comeBackTomorrow.classList.remove('visible');
@@ -819,7 +876,7 @@ function showResults() {
     window.location.href = 'sms:?body=' + encodeURIComponent(buildShareGrid());
   };
 
-  newGameBtn.style.display = state.mode === MODES.DAILY ? 'none' : 'inline-flex';
+  newGameBtn.style.display = (state.mode === MODES.DAILY || state.mode === MODES.ROOKIE_QB) ? 'none' : 'inline-flex';
   newGameBtn.onclick = () => {
     if (state.mode === MODES.BLITZ) {
       goToStartScreen();
@@ -859,6 +916,9 @@ function updateStartScreen() {
   document.querySelectorAll('.sport-card').forEach(card => {
     card.classList.toggle('selected', card.dataset.sport === state.sport);
   });
+  document.querySelectorAll('.mode-card--nfl-only').forEach(card => {
+    card.style.display = state.sport === 'nfl' ? '' : 'none';
+  });
   document.querySelectorAll('.mode-card').forEach(card => {
     card.classList.toggle('selected', card.dataset.mode === state.mode);
   });
@@ -873,8 +933,10 @@ function setupSportTabs() {
     if (!isAvailable) return;
     card.addEventListener('click', () => {
       state.sport = sport;
+      if (sport !== 'nfl' && NFL_ONLY_MODES.includes(state.mode)) state.mode = null;
       document.querySelectorAll('.sport-card').forEach(c => c.classList.remove('selected'));
       card.classList.add('selected');
+      document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('selected'));
       updateStartScreen();
     });
   });
@@ -895,7 +957,7 @@ function setupModeCards() {
 function setupStartBtn() {
   startBtn.addEventListener('click', () => {
     if (!state.mode) return;
-    if (state.mode === MODES.DAILY && hasPlayedDailyToday()) {
+    if ((state.mode === MODES.DAILY || state.mode === MODES.ROOKIE_QB) && hasPlayedDailyToday(state.sport, state.mode)) {
       showDailyAlreadyPlayed();
     } else {
       initGame(state.mode);
