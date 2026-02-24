@@ -181,6 +181,18 @@ function getMlbHeadshotUrl(playerName) {
   return `${MLB_HEADSHOT_URL}/${id}/headshot/silo/current`;
 }
 
+const NFL_HEADSHOT_URL = 'https://a.espncdn.com/i/headshots/nfl/players/full';
+
+function getNflHeadshotUrl(playerName) {
+  const playerIds = state.allData?.nfl?.playerIds;
+  if (!playerIds || typeof playerIds !== 'object') return null;
+  const raw = (playerName || '').trim();
+  if (!raw) return null;
+  const id = playerIds[raw] || playerIds[normalizeNameForLookup(raw)];
+  if (!id) return null;
+  return `${NFL_HEADSHOT_URL}/${id}.png`;
+}
+
 const MLB_STAT_NAMES = {
   R: 'Runs',
   HR: 'Home Runs',
@@ -358,6 +370,18 @@ async function loadData() {
   } catch (err) {
     console.error(`Failed to load ${ROOKIE_QB_FILE}:`, err);
     throw new Error(`Could not load ${ROOKIE_QB_FILE}: ${err.message}`);
+  }
+
+  try {
+    const nflRosterRes = await fetch('data/nfl-player-ids.json');
+    if (nflRosterRes.ok) {
+      const nflRosterJson = await nflRosterRes.json();
+      all.nfl.playerIds = nflRosterJson.players || {};
+    } else {
+      all.nfl.playerIds = {};
+    }
+  } catch {
+    all.nfl.playerIds = {};
   }
 
   for (const f of [MLB_BATTERS_FILE, MLB_PITCHERS_FILE]) {
@@ -1142,11 +1166,12 @@ function renderRound() {
   playerBName.textContent = r.playerB.Player;
   playerBMeta.textContent = `${r.playerB.Team} · ${r.playerB.season}`;
 
-  const showHeadshots = (state.sport === 'nba' && state.allData?.nba?.playerIds) ||
+  const showHeadshots = (state.sport === 'nfl' && state.allData?.nfl?.playerIds) ||
+    (state.sport === 'nba' && state.allData?.nba?.playerIds) ||
     (state.sport === 'mlb' && state.allData?.mlb?.playerIds);
   if (showHeadshots) {
-    const urlA = state.sport === 'nba' ? getNbaHeadshotUrl(r.playerA.Player) : getMlbHeadshotUrl(r.playerA.Player);
-    const urlB = state.sport === 'nba' ? getNbaHeadshotUrl(r.playerB.Player) : getMlbHeadshotUrl(r.playerB.Player);
+    const urlA = state.sport === 'nfl' ? getNflHeadshotUrl(r.playerA.Player) : state.sport === 'nba' ? getNbaHeadshotUrl(r.playerA.Player) : getMlbHeadshotUrl(r.playerA.Player);
+    const urlB = state.sport === 'nfl' ? getNflHeadshotUrl(r.playerB.Player) : state.sport === 'nba' ? getNbaHeadshotUrl(r.playerB.Player) : getMlbHeadshotUrl(r.playerB.Player);
     playerAHeadshot.style.display = '';
     playerBHeadshot.style.display = '';
     playerAHeadshot.innerHTML = '<img src="' + (urlA || NBA_HEADSHOT_FALLBACK_SVG) + '" alt="" loading="lazy">';
