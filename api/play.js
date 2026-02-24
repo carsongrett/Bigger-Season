@@ -63,6 +63,7 @@ module.exports = async (req, res) => {
     data.gamesPlayed += 1;
     data.totalScore += score;
     await redis.set(key, data);
+    res.setHeader('Cache-Control', 'no-store');
     send(res, 200, { ok: true }, origin);
   } catch (err) {
     console.error('play error', err);

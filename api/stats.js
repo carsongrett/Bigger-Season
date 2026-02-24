@@ -29,6 +29,7 @@ module.exports = async (req, res) => {
       return;
     }
 
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
     const date = req.query?.date || new Date().toISOString().slice(0, 10);
     const sport = req.query?.sport || '';
     const mode = req.query?.mode || '';
