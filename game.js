@@ -1360,31 +1360,36 @@ const SHARE_X_USERNAME = '@BetterSznGame';
 const STATS_API_BASE = 'https://betterseasonvercel.vercel.app';
 
 const SHORT_MONTHS = ['Jan.', 'Feb.', 'Mar.', 'Apr.', 'May', 'Jun.', 'Jul.', 'Aug.', 'Sep.', 'Oct.', 'Nov.', 'Dec.'];
+const SHORT_MONTHS_NO_DOT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 function getShareDateStr() {
   const d = new Date();
-  return `(${SHORT_MONTHS[d.getMonth()]} ${d.getDate()})`;
+  return `(${SHORT_MONTHS_NO_DOT[d.getMonth()]} ${d.getDate()})`;
+}
+
+// Full title for share first line: e.g. "NFL Daily", "NBA Daily", "MLB Batters Daily", "NFL Rookie QB Daily", "NFL Blind Resume"
+function getShareTitle(mode, sport) {
+  const s = (sport || '').toUpperCase();
+  if (mode === 'daily') return `${s === 'NFL' ? 'NFL' : s === 'NBA' ? 'NBA' : 'MLB'} Daily`;
+  if (mode === 'rookie_qb') return 'NFL Rookie QB Daily';
+  if (mode === 'blind_resume') return 'NFL Blind Resume';
+  if (mode === 'mlb_batters') return 'MLB Batters Daily';
+  if (mode === 'mlb_pitchers') return 'MLB Pitchers Daily';
+  if (mode === 'blitz') return `${s === 'NFL' ? 'NFL' : s === 'NBA' ? 'NBA' : 'MLB'} Blitz`;
+  return 'Unlimited';
 }
 
 function buildShareText(mode, score, roundScores, sport) {
-  const modeStr = mode === 'daily' ? 'Daily' : mode === 'blitz' ? 'Blitz' : mode === 'rookie_qb' ? 'Rookie QBs' : mode === 'mlb_batters' ? 'MLB Batters' : mode === 'mlb_pitchers' ? 'MLB Pitchers' : mode === 'blind_resume' ? 'Blind Resume' : 'Unlimited';
-  const total = mode === 'rookie_qb' ? 12 : 9;
-  const scoreStr = (mode === 'blitz' || mode === 'blind_resume') ? `${score} pts` : `${score}/${total}pts`;
+  const scoreStr = `${score}pts`;
+  const shareTitle = getShareTitle(mode, sport);
+  const dateStr = getShareDateStr();
   const dailyModes = ['daily', 'rookie_qb', 'mlb_batters', 'mlb_pitchers', 'blind_resume'];
-  const isDaily = dailyModes.includes(mode);
-  const dash = isDaily ? ' - ' : ' — ';
-  const dateSuffix = isDaily ? ` ${getShareDateStr()}` : '';
-  // URL on its own line so SMS clients treat it as a clickable link (can send as second message on some clients)
+  const includeDate = dailyModes.includes(mode) || mode === 'blitz';
+  const firstLine = includeDate ? `${scoreStr} - ${shareTitle} ${dateStr}` : `${scoreStr} - ${shareTitle}`;
   const urlSuffix = (SHARE_X_USERNAME && SHARE_URL_PLACEHOLDER)
     ? `\n\n${SHARE_X_USERNAME}\n${SHARE_URL_PLACEHOLDER}`
     : SHARE_URL_PLACEHOLDER ? `\n\n${SHARE_URL_PLACEHOLDER}` : '';
-  if (mode === 'blitz') {
-    return `${scoreStr} — ${modeStr}${urlSuffix}`;
-  }
-  if (mode === 'blind_resume') {
-    return `${scoreStr} — ${modeStr}${dateSuffix}` + urlSuffix;
-  }
-  let text = `${scoreStr}${dash}${modeStr}${dateSuffix}`;
+  let text = firstLine;
   if (roundScores && roundScores.length > 0) {
     text += '\n\n';
     roundScores.forEach(({ position, score: rs, total: t }, idx) => {
