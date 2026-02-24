@@ -742,6 +742,18 @@ body::before {
   color: #f59e0b;
 }
 
+.today-stats {
+  display: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #94a3b8;
+  margin-top: 0.35rem;
+}
+
+.today-stats.visible {
+  display: block;
+}
+
 .come-back-tomorrow {
   display: none;
   font-size: 1rem;

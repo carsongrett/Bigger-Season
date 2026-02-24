@@ -701,6 +701,7 @@ const confirmBtn = document.getElementById('confirm-btn');
 const comeBackTomorrow = document.getElementById('come-back-tomorrow');
 const resultsScore = document.getElementById('results-score');
 const resultsStreak = document.getElementById('results-streak');
+const todayStatsEl = document.getElementById('today-stats');
 const shareGrid = document.getElementById('share-grid');
 const shareSmsBtn = document.getElementById('share-sms-btn');
 const shareXBtn = document.getElementById('share-x-btn');
@@ -1149,6 +1150,7 @@ function showDailyAlreadyPlayed() {
   shareSmsBtn.onclick = () => { window.location.href = 'sms:?body=' + encodeURIComponent(shareText); };
   shareXBtn.onclick = () => { window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(shareText)); };
   newGameBtn.style.display = 'none';
+  fetchTodayStats();
 }
 
 function renderRound() {
@@ -1338,6 +1340,9 @@ function getStreak(sport, mode) {
 const SHARE_URL_PLACEHOLDER = 'https://betterseason.live';
 const SHARE_X_USERNAME = '@BetterSznGame';
 
+// Vercel API for recording plays and today's stats. Set to your Vercel deployment URL (e.g. https://your-project.vercel.app).
+const STATS_API_BASE = 'https://betterseasonvercel.vercel.app';
+
 const SHORT_MONTHS = ['Jan.', 'Feb.', 'Mar.', 'Apr.', 'May', 'Jun.', 'Jul.', 'Aug.', 'Sep.', 'Oct.', 'Nov.', 'Dec.'];
 
 function getShareDateStr() {
@@ -1386,6 +1391,51 @@ function buildShareGrid() {
   return buildShareGridForMode(state.mode, state.score, state.roundScores, state.sport);
 }
 
+function recordPlay() {
+  if (!STATS_API_BASE || !todayStatsEl) return;
+  const url = STATS_API_BASE.replace(/\/$/, '') + '/api/play';
+  fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      sport: state.sport,
+      mode: state.mode,
+      score: state.score,
+    }),
+  }).catch(() => {});
+}
+
+function formatTodayStats(gamesPlayed, averageScore, mode) {
+  if (gamesPlayed == null || gamesPlayed === 0) return '';
+  const isPoints = mode === MODES.BLITZ || mode === MODES.BLIND_RESUME;
+  const avgStr = averageScore != null
+    ? (isPoints ? `Avg ${averageScore} pts` : `Avg ${averageScore}/9`)
+    : '';
+  const parts = [`${gamesPlayed} game${gamesPlayed !== 1 ? 's' : ''} today`];
+  if (avgStr) parts.push(avgStr);
+  return parts.join(' · ');
+}
+
+function renderTodayStats(text) {
+  if (!todayStatsEl) return;
+  todayStatsEl.textContent = text || '';
+  todayStatsEl.classList.toggle('visible', !!text);
+}
+
+function fetchTodayStats() {
+  if (!STATS_API_BASE || !todayStatsEl) return;
+  const date = new Date().toISOString().slice(0, 10);
+  const url = `${STATS_API_BASE.replace(/\/$/, '')}/api/stats?date=${encodeURIComponent(date)}&sport=${encodeURIComponent(state.sport)}&mode=${encodeURIComponent(state.mode)}`;
+  fetch(url)
+    .then((r) => r.json())
+    .then((data) => {
+      const gamesPlayed = data.gamesPlayed ?? 0;
+      const averageScore = data.averageScore ?? null;
+      renderTodayStats(formatTodayStats(gamesPlayed, averageScore, state.mode));
+    })
+    .catch(() => renderTodayStats(''));
+}
+
 function showResults() {
   if (state.blitzTimerId) {
     clearInterval(state.blitzTimerId);
@@ -1413,6 +1463,9 @@ function showResults() {
   shareGrid.textContent = buildShareGrid();
   renderResultsModeButtons(state.mode);
   renderResultsSportToolbar();
+
+  recordPlay();
+  fetchTodayStats();
 
   const shareText = buildShareGrid();
   shareSmsBtn.onclick = () => { window.location.href = 'sms:?body=' + encodeURIComponent(shareText); };
