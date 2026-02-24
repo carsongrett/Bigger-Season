@@ -84,12 +84,16 @@ function getGameNumber() {
   return Math.max(1, days);
 }
 
-// Seeded random number generator (mulberry32)
+// Seeded random number generator (mulberry32). Finalize hash so similar seeds (e.g. consecutive dates) don't produce similar sequences.
 function createSeededRandom(seed) {
   let h = 0;
   for (let i = 0; i < seed.length; i++) {
     h = Math.imul(31, h) + seed.charCodeAt(i) | 0;
   }
+  // Mix bits so e.g. "2025-02-24" vs "2025-02-25" yield very different initial states
+  h = Math.imul(h ^ h >>> 16, 0x85ebca6b) | 0;
+  h = Math.imul(h ^ h >>> 13, 0xc2b2ae35) | 0;
+  h = (h ^ h >>> 16) >>> 0;
   return function() {
     h = Math.imul(h ^ h >>> 15, h | 0);
     h = Math.imul(h ^ h >>> 13, h | 0);
@@ -743,7 +747,12 @@ let state = {
 
 function getGameSeed(mode) {
   const dailyModes = [MODES.DAILY, MODES.ROOKIE_QB, MODES.MLB_BATTERS, MODES.MLB_PITCHERS, MODES.BLIND_RESUME];
-  if (dailyModes.includes(mode)) return getTodaySeed();
+  if (dailyModes.includes(mode)) {
+    const dateSeed = getTodaySeed();
+    // Blind Resume: use a distinct seed so similar dates don't produce similar RNG (same 3 players)
+    if (mode === MODES.BLIND_RESUME) return dateSeed + '-blind_resume';
+    return dateSeed;
+  }
   return Math.random().toString(36).slice(2, 12);
 }
 
