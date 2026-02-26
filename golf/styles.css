@@ -22,6 +22,7 @@
 body {
   margin: 0;
   min-height: 100vh;
+  min-height: 100dvh;
   font-family: 'DM Sans', -apple-system, sans-serif;
   background: var(--bg);
   color: var(--text);
@@ -30,21 +31,22 @@ body {
 
 #app {
   min-height: 100vh;
-  padding: 0 1rem 5rem;
+  min-height: 100dvh;
+  padding: env(safe-area-inset-top) max(1rem, env(safe-area-inset-left)) 5rem max(1rem, env(safe-area-inset-right));
   max-width: 1200px;
   margin: 0 auto;
 }
 
 .header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   padding: 1.25rem 0 1rem;
-  text-align: center;
   position: relative;
 }
 
 .golf-home-link {
-  position: absolute;
-  left: 0;
-  top: 1.25rem;
+  flex-shrink: 0;
   font-size: 0.85rem;
   color: var(--muted);
   text-decoration: none;
@@ -52,6 +54,12 @@ body {
 
 .golf-home-link:hover {
   color: var(--accent);
+}
+
+.header-title-wrap {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
 }
 
 .header h1 {
@@ -340,7 +348,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 0.75rem;
-  padding: 0.65rem 1rem;
+  padding: 0.65rem max(1rem, env(safe-area-inset-right)) max(0.65rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
   background: linear-gradient(180deg, #0d2818 0%, #1a3d29 100%);
   border-top: 2px solid rgba(45, 157, 100, 0.4);
   box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.3);
