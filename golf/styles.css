@@ -39,8 +39,10 @@ body {
 
 @media (max-width: 620px) {
   #app {
-    padding-left: max(0.5rem, env(safe-area-inset-left));
-    padding-right: max(0.5rem, env(safe-area-inset-right));
+    /* Use same padding both sides so content is centered when device reports asymmetric safe areas */
+    --side: max(0.5rem, env(safe-area-inset-left), env(safe-area-inset-right));
+    padding-left: var(--side);
+    padding-right: var(--side);
   }
 }
 
