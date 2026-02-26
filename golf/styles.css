@@ -177,6 +177,32 @@ body {
   min-width: 0;
 }
 
+.golfer-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+/* Hidden for now; remove display:none to show headshots again */
+.golfer-headshot {
+  display: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+}
+
+.golfer-headshot img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 @media (max-width: 620px) {
   .grid-col {
     display: flex;
@@ -186,10 +212,24 @@ body {
     min-width: 0;
   }
 
-  .grid-col .golfer-name {
+  .grid-col .golfer-info {
     flex: 0 0 26%;
     min-width: 0;
     max-width: 26%;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .grid-col .golfer-headshot {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+  }
+
+  .grid-col .golfer-name {
+    flex: 1;
+    min-width: 0;
     height: auto;
     min-height: 2.75em;
     font-size: 0.8rem;
@@ -421,21 +461,15 @@ body {
 
 .results-modal-title {
   margin: 0 0 0.5rem;
-  font-size: 1rem;
+  font-size: 1.35rem;
   font-weight: 600;
   color: var(--muted);
 }
 
 .results-modal-total {
-  font-size: 2.5rem;
+  font-size: 3.5rem;
   font-weight: 700;
-  margin: 0 0 0.25rem;
-}
-
-.results-modal-vs-par {
-  font-size: 0.9rem;
-  color: var(--muted);
-  margin: 0 0 1.5rem;
+  margin: 0 0 1rem;
 }
 
 .play-again-btn {
@@ -450,6 +484,146 @@ body {
 }
 
 .play-again-btn:hover {
+  background: #38b86c;
+}
+
+/* How to play modal — shown every time the game loads */
+.how-to-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  pointer-events: none;
+}
+
+.how-to-modal.hidden {
+  display: none;
+}
+
+.how-to-modal:not(.hidden) {
+  pointer-events: auto;
+}
+
+.how-to-modal:not(.hidden) .how-to-modal-backdrop {
+  animation: howto-backdrop 0.25s ease forwards;
+}
+
+.how-to-modal:not(.hidden) .how-to-modal-box {
+  animation: howto-box 0.3s ease forwards;
+}
+
+@keyframes howto-backdrop {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes howto-box {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.how-to-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  cursor: pointer;
+}
+
+.how-to-modal-box {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0 2rem 1.75rem;
+  padding-top: 1.25rem;
+  text-align: left;
+  max-width: 22rem;
+  width: 100%;
+  box-shadow: var(--shadow), 0 0 0 1px rgba(45, 157, 100, 0.15);
+}
+
+.how-to-modal-box::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--accent-dim), var(--accent));
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+
+.how-to-modal-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: color 0.15s ease;
+}
+
+.how-to-modal-close:hover {
+  color: var(--text);
+}
+
+.how-to-modal-title {
+  margin: 0 0 1.1rem;
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--text);
+}
+
+.how-to-modal-box p {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.how-to-modal-note {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-bottom: 1.25rem !important;
+}
+
+.how-to-modal-box p:last-of-type:not(.how-to-modal-note) {
+  margin-bottom: 1.25rem;
+}
+
+.how-to-modal-btn {
+  font: inherit;
+  font-weight: 600;
+  padding: 0.7rem 1.5rem;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.15s ease;
+}
+
+.how-to-modal-btn:hover {
   background: #38b86c;
 }
 

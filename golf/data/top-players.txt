@@ -1,0 +1,7 @@
+# Top players list — one name per line. These golfers appear more often in the game.
+# Use the same spelling as in golf_results.csv when possible.
+# "Last, First" (e.g. Rahm, Jon) also matches "Jon Rahm" in the data.
+# Lines starting with # and empty lines are ignored.
+#
+# Add your ~100 names below:
+
