@@ -186,6 +186,7 @@ let state = {
   seed: 0,
   golfPlayerIds: {}, // name -> ESPN id for headshots
 };
+let hasShownHowToThisSession = false;
 
 function normalizeNameForLookup(name) {
   if (!name || typeof name !== 'string') return '';
@@ -416,7 +417,10 @@ function initGame() {
       state.puzzle = buildPuzzle(rows, seed, rankMap);
       updateScorebug();
       renderGrid();
-      showHowToModal();
+      if (!hasShownHowToThisSession) {
+        showHowToModal();
+        hasShownHowToThisSession = true;
+      }
     })
     .catch((err) => {
       if (scorebugValue) scorebugValue.textContent = '—';
