@@ -39,7 +39,14 @@ body {
 
 @media (max-width: 620px) {
   #app {
-    /* Use same padding both sides so content is centered when device reports asymmetric safe areas */
+    padding-left: max(0.5rem, env(safe-area-inset-left));
+    padding-right: max(0.5rem, env(safe-area-inset-right));
+  }
+}
+
+/* Phone-only: symmetric padding so content is centered on iPhone (avoids "pushed left") */
+@media (max-width: 480px) {
+  #app {
     --side: max(0.5rem, env(safe-area-inset-left), env(safe-area-inset-right));
     padding-left: var(--side);
     padding-right: var(--side);
@@ -125,6 +132,7 @@ body {
   .grid {
     gap: 0.25rem;
     max-width: none;
+    min-width: 0;
   }
 }
 
@@ -138,6 +146,10 @@ body {
 @media (max-width: 620px) {
   .grid-col {
     gap: 0.2rem;
+  }
+
+  .card {
+    min-width: 0;
   }
 }
 
