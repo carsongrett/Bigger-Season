@@ -16,7 +16,7 @@ const RANK_WEIGHT_TOP_50 = 4;
 const RANK_WEIGHT_TOP_100 = 3;
 const RANK_WEIGHT_DEFAULT = 1;
 const GOLF_HEADSHOT_URL = 'https://a.espncdn.com/i/headshots/golf/players/full';
-const GOLF_SHARE_URL = 'https://betterseason.live';
+const GOLF_SHARE_URL = 'https://betterseason.live/golf';
 const GOLF_SHARE_HANDLE = '@BetterSznGame';
 const GOLF_SHARE_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const GOLF_HEADSHOT_FALLBACK_SVG = 'data:image/svg+xml,' + encodeURIComponent(
@@ -167,7 +167,15 @@ function buildPuzzle(rows, seed, rankMap) {
     }
   }
   const puzzle = selected.map(([player, events]) => {
-    const picked = shuffleWithRng(events, rng).slice(0, CARDS_PER_GOLFER);
+    let picked = shuffleWithRng([...events], rng).slice(0, CARDS_PER_GOLFER);
+    const allGreen = picked.every((e) => e.score_to_par < 0);
+    const yellowOrRed = events.filter((e) => e.score_to_par >= 0);
+    if (allGreen && yellowOrRed.length > 0 && rng() < 0.5) {
+      const swapIn = yellowOrRed[Math.floor(rng() * yellowOrRed.length)];
+      const swapIdx = Math.floor(rng() * picked.length);
+      picked = [...picked];
+      picked[swapIdx] = swapIn;
+    }
     return {
       player_name: player,
       cards: picked.map((e) => ({
@@ -251,11 +259,11 @@ function formatEventNameForDisplay(name) {
   return s;
 }
 
-/** Card background: 3 shades of green, 3 of yellow, 3 of red. Discrete bands only. */
+/** Card background: 3 shades of green, 3 of yellow, 3 of red. Tuned for strong contrast with white score text. */
 function getScoreBackgroundColor(scoreToPar) {
-  const greenShades = ['hsl(152, 42%, 52%)', 'hsl(152, 38%, 58%)', 'hsl(152, 35%, 64%)'];
-  const yellowShades = ['hsl(48, 52%, 62%)', 'hsl(48, 48%, 68%)', 'hsl(48, 44%, 74%)'];
-  const redShades = ['hsl(0, 48%, 58%)', 'hsl(0, 52%, 54%)', 'hsl(0, 55%, 50%)'];
+  const greenShades = ['hsl(152, 42%, 46%)', 'hsl(152, 40%, 50%)', 'hsl(152, 38%, 54%)'];
+  const yellowShades = ['hsl(48, 56%, 40%)', 'hsl(48, 52%, 44%)', 'hsl(48, 48%, 48%)'];
+  const redShades = ['hsl(0, 52%, 46%)', 'hsl(0, 54%, 42%)', 'hsl(0, 56%, 38%)'];
 
   if (scoreToPar <= -10) return greenShades[0];
   if (scoreToPar <= -4) return greenShades[1];
@@ -369,14 +377,28 @@ function getGolfShareDateStr() {
   return `${GOLF_SHARE_MONTHS[d.getMonth()]} ${d.getDate()}`;
 }
 
+/** Map score to par to share emoji: 🟩 under par, 🟨 par or +1, 🟥 +2 and over. */
+function scoreToShareEmoji(scoreToPar) {
+  if (scoreToPar < 0) return '🟩';
+  if (scoreToPar <= 1) return '🟨';
+  return '🟥';
+}
+
 function buildGolfShareText(total, forSms) {
   const dateStr = getGolfShareDateStr();
   const scoreStr = formatScore(total);
-  const top = `Best Ball (${dateStr}):\n${scoreStr} ⛳`;
+  const modeLabel = state.easyMode ? 'majors' : 'normal';
+  const emojiRow = (state.picks || []).map(scoreToShareEmoji).join('');
+  const lines = [
+    `Best Ball (${modeLabel})⛳ ${dateStr}`,
+    scoreStr,
+    emojiRow || '',
+  ].filter(Boolean);
   const urlPart = GOLF_SHARE_URL ? `\n\n${GOLF_SHARE_URL}` : '';
-  if (forSms) return top + urlPart;
+  const body = lines.join('\n');
+  if (forSms) return body + urlPart;
   const handlePart = GOLF_SHARE_HANDLE ? `\n\n${GOLF_SHARE_HANDLE}\n${GOLF_SHARE_URL}` : urlPart;
-  return top + handlePart;
+  return body + handlePart;
 }
 
 function setupGolfShareButtons(shareTextX, shareTextSms) {
