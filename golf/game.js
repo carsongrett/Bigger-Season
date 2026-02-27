@@ -24,6 +24,9 @@ const GOLF_HEADSHOT_FALLBACK_SVG = 'data:image/svg+xml,' + encodeURIComponent(
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 120" fill="%234a5568"><ellipse cx="50" cy="38" rx="22" ry="26"/><path d="M15 120c0-22 15-40 35-40s35 18 35 40z"/></svg>'
 );
 
+// Delay before showing results modal after the last card is picked (so user can see the final grid)
+const RESULTS_MODAL_DELAY_MS = 2000;
+
 // Year range for this mode (CSV is unchanged; filter in memory so other modes can use full data)
 const MIN_YEAR = 2020;
 const MAX_YEAR = 2025;
@@ -359,7 +362,7 @@ function pickCard(colIndex, scoreToPar, cardEl) {
   updateScorebug();
   const definedCount = state.picks.filter((p) => p !== undefined).length;
   if (definedCount === 4) {
-    showResults();
+    setTimeout(showResults, RESULTS_MODAL_DELAY_MS);
   }
 }
 
