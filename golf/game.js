@@ -16,6 +16,9 @@ const RANK_WEIGHT_TOP_50 = 4;
 const RANK_WEIGHT_TOP_100 = 3;
 const RANK_WEIGHT_DEFAULT = 1;
 const GOLF_HEADSHOT_URL = 'https://a.espncdn.com/i/headshots/golf/players/full';
+const GOLF_SHARE_URL = 'https://betterseason.live';
+const GOLF_SHARE_HANDLE = '@BetterSznGame';
+const GOLF_SHARE_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const GOLF_HEADSHOT_FALLBACK_SVG = 'data:image/svg+xml,' + encodeURIComponent(
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 120" fill="%234a5568"><ellipse cx="50" cy="38" rx="22" ry="26"/><path d="M15 120c0-22 15-40 35-40s35 18 35 40z"/></svg>'
 );
@@ -179,6 +182,10 @@ const howToModal = document.getElementById('how-to-modal');
 const howToModalBackdrop = document.getElementById('how-to-modal-backdrop');
 const howToModalClose = document.getElementById('how-to-modal-close');
 const howToModalBtn = document.getElementById('how-to-modal-btn');
+const golfShareGrid = document.getElementById('golf-share-grid');
+const golfShareNativeBtn = document.getElementById('golf-share-native-btn');
+const golfShareSmsBtn = document.getElementById('golf-share-sms-btn');
+const golfShareXBtn = document.getElementById('golf-share-x-btn');
 
 let state = {
   puzzle: null,
@@ -337,9 +344,57 @@ function updateScorebug() {
   else scorebugEl.classList.add('scorebug--even');
 }
 
+function getGolfShareDateStr() {
+  const d = new Date();
+  return `${GOLF_SHARE_MONTHS[d.getMonth()]} ${d.getDate()}`;
+}
+
+function buildGolfShareText(total, forSms) {
+  const dateStr = getGolfShareDateStr();
+  const scoreStr = formatScore(total);
+  const top = `Best Ball (${dateStr}):\n${scoreStr} ⛳`;
+  const urlPart = GOLF_SHARE_URL ? `\n\n${GOLF_SHARE_URL}` : '';
+  if (forSms) return top + urlPart;
+  const handlePart = GOLF_SHARE_HANDLE ? `\n\n${GOLF_SHARE_HANDLE}\n${GOLF_SHARE_URL}` : urlPart;
+  return top + handlePart;
+}
+
+function setupGolfShareButtons(shareTextX, shareTextSms) {
+  const hasWebShare = typeof navigator !== 'undefined' && navigator.share;
+  if (golfShareNativeBtn) {
+    if (hasWebShare) {
+      golfShareNativeBtn.classList.remove('hidden');
+      golfShareNativeBtn.onclick = async () => {
+        try {
+          await navigator.share({
+            text: shareTextX,
+            url: GOLF_SHARE_URL,
+          });
+        } catch (e) {
+          if (e.name !== 'AbortError') console.error('Share failed:', e);
+        }
+      };
+    } else {
+      golfShareNativeBtn.classList.add('hidden');
+    }
+  }
+  if (golfShareSmsBtn) {
+    golfShareSmsBtn.classList.toggle('hidden', !!hasWebShare);
+    golfShareSmsBtn.onclick = () => { window.location.href = 'sms:?body=' + encodeURIComponent(shareTextSms); };
+  }
+  if (golfShareXBtn) {
+    golfShareXBtn.classList.toggle('hidden', !!hasWebShare);
+    golfShareXBtn.onclick = () => { window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(shareTextX)); };
+  }
+}
+
 function showResults() {
   const total = state.picks.reduce((a, b) => a + b, 0);
   finalTotal.textContent = formatScore(total);
+  const shareTextX = buildGolfShareText(total, false);
+  const shareTextSms = buildGolfShareText(total, true);
+  if (golfShareGrid) golfShareGrid.textContent = shareTextX;
+  setupGolfShareButtons(shareTextX, shareTextSms);
   if (resultsModal) resultsModal.classList.remove('hidden');
   playAgainBtn.focus();
 }

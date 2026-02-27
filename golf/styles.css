@@ -472,6 +472,51 @@ body {
   margin: 0 0 1rem;
 }
 
+.results-share-section {
+  margin-bottom: 1rem;
+}
+
+.results-share-grid {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--muted);
+  white-space: pre-wrap;
+  margin-bottom: 0.75rem;
+  max-height: 6rem;
+  overflow-y: auto;
+}
+
+.results-share-buttons {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.results-share-buttons .share-btn {
+  flex: 1;
+  min-width: 4rem;
+  max-width: 6rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  background: var(--card-face);
+  color: var(--text);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.results-share-buttons .share-btn:hover {
+  background: var(--surface);
+  border-color: var(--accent);
+}
+
+.results-share-buttons .share-btn.hidden {
+  display: none;
+}
+
 .play-again-btn {
   font: inherit;
   font-weight: 600;

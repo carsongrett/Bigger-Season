@@ -759,6 +759,7 @@ const comeBackTomorrow = document.getElementById('come-back-tomorrow');
 const resultsScore = document.getElementById('results-score');
 const resultsStreak = document.getElementById('results-streak');
 const shareGrid = document.getElementById('share-grid');
+const shareNativeBtn = document.getElementById('share-native-btn');
 const shareSmsBtn = document.getElementById('share-sms-btn');
 const shareXBtn = document.getElementById('share-x-btn');
 const newGameBtn = document.getElementById('new-game-btn');
@@ -1254,9 +1255,9 @@ function showDailyAlreadyPlayed() {
   shareGrid.textContent = buildShareGridForMode(state.mode, score, roundScores, state.sport);
   renderResultsModeButtons(state.mode);
   renderResultsSportToolbar();
-  const shareText = buildShareGridForMode(state.mode, score, roundScores, state.sport);
-  shareSmsBtn.onclick = () => { window.location.href = 'sms:?body=' + encodeURIComponent(shareText); };
-  shareXBtn.onclick = () => { window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(shareText)); };
+  const shareTextX = buildShareText(state.mode, score, roundScores, state.sport, false);
+  const shareTextSms = buildShareText(state.mode, score, roundScores, state.sport, true);
+  setupShareButtons(shareTextX, shareTextSms);
   newGameBtn.style.display = 'none';
 }
 
@@ -1468,16 +1469,18 @@ function getShareTitle(mode, sport) {
   return 'Unlimited';
 }
 
-function buildShareText(mode, score, roundScores, sport) {
+function buildShareText(mode, score, roundScores, sport, forSms) {
   const scoreStr = `${score}pts`;
   const shareTitle = getShareTitle(mode, sport);
   const dateStr = getShareDateStr();
   const dailyModes = ['daily', 'rookie_qb', 'mlb_batters', 'mlb_pitchers', 'blind_resume', 'blind_resume_nba'];
   const includeDate = dailyModes.includes(mode) || mode === 'blitz';
   const firstLine = includeDate ? `${scoreStr} - ${shareTitle} ${dateStr}` : `${scoreStr} - ${shareTitle}`;
-  const urlSuffix = (SHARE_X_USERNAME && SHARE_URL_PLACEHOLDER)
-    ? `\n\n${SHARE_X_USERNAME}\n${SHARE_URL_PLACEHOLDER}`
-    : SHARE_URL_PLACEHOLDER ? `\n\n${SHARE_URL_PLACEHOLDER}` : '';
+  const urlSuffix = forSms
+    ? (SHARE_URL_PLACEHOLDER ? `\n\n${SHARE_URL_PLACEHOLDER}` : '')
+    : (SHARE_X_USERNAME && SHARE_URL_PLACEHOLDER)
+      ? `\n\n${SHARE_X_USERNAME}\n${SHARE_URL_PLACEHOLDER}`
+      : SHARE_URL_PLACEHOLDER ? `\n\n${SHARE_URL_PLACEHOLDER}` : '';
   let text = firstLine;
   if (roundScores && roundScores.length > 0) {
     text += '\n\n';
@@ -1495,11 +1498,40 @@ function buildShareText(mode, score, roundScores, sport) {
 }
 
 function buildShareGridForMode(mode, score, roundScores, sport) {
-  return buildShareText(mode, score, roundScores, sport);
+  return buildShareText(mode, score, roundScores, sport, false);
 }
 
 function buildShareGrid() {
   return buildShareGridForMode(state.mode, state.score, state.roundScores, state.sport);
+}
+
+function setupShareButtons(shareTextX, shareTextSms) {
+  const hasWebShare = typeof navigator !== 'undefined' && navigator.share;
+  if (shareNativeBtn) {
+    if (hasWebShare) {
+      shareNativeBtn.classList.remove('hidden');
+      shareNativeBtn.onclick = async () => {
+        try {
+          await navigator.share({
+            text: shareTextX,
+            url: SHARE_URL_PLACEHOLDER,
+          });
+        } catch (e) {
+          if (e.name !== 'AbortError') console.error('Share failed:', e);
+        }
+      };
+    } else {
+      shareNativeBtn.classList.add('hidden');
+    }
+  }
+  if (shareSmsBtn) {
+    shareSmsBtn.classList.toggle('hidden', !!hasWebShare);
+    shareSmsBtn.onclick = () => { window.location.href = 'sms:?body=' + encodeURIComponent(shareTextSms); };
+  }
+  if (shareXBtn) {
+    shareXBtn.classList.toggle('hidden', !!hasWebShare);
+    shareXBtn.onclick = () => { window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(shareTextX)); };
+  }
 }
 
 function showResults() {
@@ -1526,9 +1558,9 @@ function showResults() {
   renderResultsModeButtons(state.mode);
   renderResultsSportToolbar();
 
-  const shareText = buildShareGrid();
-  shareSmsBtn.onclick = () => { window.location.href = 'sms:?body=' + encodeURIComponent(shareText); };
-  shareXBtn.onclick = () => { window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(shareText)); };
+  const shareTextX = buildShareText(state.mode, state.score, state.roundScores, state.sport, false);
+  const shareTextSms = buildShareText(state.mode, state.score, state.roundScores, state.sport, true);
+  setupShareButtons(shareTextX, shareTextSms);
 
   const dailyModes = [MODES.DAILY, MODES.ROOKIE_QB, MODES.MLB_BATTERS, MODES.MLB_PITCHERS, MODES.BLIND_RESUME, MODES.BLIND_RESUME_NBA];
   newGameBtn.style.display = dailyModes.includes(state.mode) ? 'none' : 'inline-flex';
