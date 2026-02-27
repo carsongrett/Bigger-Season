@@ -206,8 +206,6 @@ const golfShareGrid = document.getElementById('golf-share-grid');
 const golfShareNativeBtn = document.getElementById('golf-share-native-btn');
 const golfShareSmsBtn = document.getElementById('golf-share-sms-btn');
 const golfShareXBtn = document.getElementById('golf-share-x-btn');
-const modeToggle = document.getElementById('mode-toggle');
-const modeToggleLabel = document.getElementById('mode-toggle-label');
 const howToPlayBtn = document.getElementById('how-to-play-btn');
 const howToDetailModal = document.getElementById('how-to-detail-modal');
 const howToDetailModalBackdrop = document.getElementById('how-to-detail-modal-backdrop');
@@ -218,7 +216,9 @@ let state = {
   picks: [], // one score_to_par per row (index = row)
   seed: 0,
   golfPlayerIds: {}, // name -> ESPN id for headshots
-  easyMode: false, // false = normal (all events), true = majors only
+  easyMode: (function () {
+    return new URLSearchParams(window.location.search).get('mode') === 'majors';
+  })(), // set from URL: ?mode=majors = majors only, otherwise normal
 };
 let hasShownHowToThisSession = false;
 
@@ -387,10 +387,10 @@ function scoreToShareEmoji(scoreToPar) {
 function buildGolfShareText(total, forSms) {
   const dateStr = getGolfShareDateStr();
   const scoreStr = formatScore(total);
-  const modeLabel = state.easyMode ? 'majors' : 'normal';
+  const modeLabel = state.easyMode ? 'Best Ball' : 'Best Ball (Hard)';
   const emojiRow = (state.picks || []).map(scoreToShareEmoji).join('\n');
   const lines = [
-    `Best Ball (${modeLabel})⛳ ${dateStr}`,
+    `${modeLabel}⛳ ${dateStr}`,
     scoreStr,
     emojiRow || '',
   ].filter(Boolean);
@@ -523,16 +523,6 @@ function loadRankings() {
     .catch(() => new Map());
 }
 
-function updateModeToggleUI() {
-  if (modeToggle) {
-    modeToggle.classList.toggle('mode-toggle--majors', state.easyMode);
-    modeToggle.setAttribute('aria-checked', state.easyMode ? 'true' : 'false');
-  }
-  if (modeToggleLabel) {
-    modeToggleLabel.textContent = state.easyMode ? 'Majors' : 'Normal';
-  }
-}
-
 function initGame() {
   const seed = getSeed();
   state = {
@@ -542,7 +532,6 @@ function initGame() {
     golfPlayerIds: state.golfPlayerIds || {},
     easyMode: state.easyMode,
   };
-  updateModeToggleUI();
   Promise.all([loadGolfPlayerIds(), loadData(state.easyMode), loadRankings()])
     .then(([, rows, rankMap]) => {
       state.puzzle = buildPuzzle(rows, seed, rankMap);
@@ -557,13 +546,6 @@ function initGame() {
       if (scorebugValue) scorebugValue.textContent = '—';
       grid.innerHTML = `<p class="load-error">${escapeHtml(err.message)}</p>`;
     });
-}
-
-if (modeToggle) {
-  modeToggle.addEventListener('click', () => {
-    state.easyMode = !state.easyMode;
-    initGame();
-  });
 }
 
 initGame();

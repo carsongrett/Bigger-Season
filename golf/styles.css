@@ -602,8 +602,6 @@ body {
   color: var(--muted);
   white-space: pre-wrap;
   margin-bottom: 0.75rem;
-  max-height: 6rem;
-  overflow-y: auto;
 }
 
 .results-share-buttons {

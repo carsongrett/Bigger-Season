@@ -53,8 +53,8 @@ const MODE_LABELS = {
   daily: 'Daily',
   blitz: 'Blitz',
   rookie_qb: 'Rookie QBs',
-  mlb_batters: 'MLB Batters',
-  mlb_pitchers: 'MLB Pitchers',
+  mlb_batters: 'Daily (Batters)',
+  mlb_pitchers: 'Daily (Pitchers)',
   blind_resume: 'Blind Resume',
   blind_resume_nba: 'Blind Resume',
 };
@@ -1463,8 +1463,8 @@ function getShareTitle(mode, sport) {
   if (mode === 'rookie_qb') return 'NFL Rookie QB Daily';
   if (mode === 'blind_resume') return 'NFL Blind Resume';
   if (mode === 'blind_resume_nba') return 'NBA Blind Resume';
-  if (mode === 'mlb_batters') return 'MLB Batters Daily';
-  if (mode === 'mlb_pitchers') return 'MLB Pitchers Daily';
+  if (mode === 'mlb_batters') return 'Daily (Batters)';
+  if (mode === 'mlb_pitchers') return 'Daily (Pitchers)';
   if (mode === 'blitz') return `${s === 'NFL' ? 'NFL' : s === 'NBA' ? 'NBA' : 'MLB'} Blitz`;
   return 'Unlimited';
 }
@@ -1632,7 +1632,7 @@ function updateStartScreen() {
     card.classList.toggle('selected', card.dataset.mode === state.mode);
   });
   const sportAvailable = AVAILABLE_SPORTS.includes(state.sport);
-  const pgaReady = state.sport === 'pga' && state.mode === 'pick_the_round';
+  const pgaReady = state.sport === 'pga' && (state.mode === 'pick_the_round' || state.mode === 'pick_the_round_majors');
   startBtn.disabled = state.sport === 'pga' ? !pgaReady : (!state.mode || !sportAvailable);
 }
 
@@ -1670,8 +1670,9 @@ function setupModeCards() {
 
 function setupStartBtn() {
   startBtn.addEventListener('click', () => {
-    if (state.sport === 'pga' && state.mode === 'pick_the_round') {
-      window.location.href = 'golf/';
+    if (state.sport === 'pga' && (state.mode === 'pick_the_round' || state.mode === 'pick_the_round_majors')) {
+      const mode = state.mode === 'pick_the_round_majors' ? 'majors' : 'normal';
+      window.location.href = 'golf/?mode=' + mode;
       return;
     }
     if (!state.mode) return;
