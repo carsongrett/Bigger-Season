@@ -170,7 +170,7 @@ function buildPuzzle(rows, seed, rankMap) {
     let picked = shuffleWithRng([...events], rng).slice(0, CARDS_PER_GOLFER);
     const allGreen = picked.every((e) => e.score_to_par < 0);
     const yellowOrRed = events.filter((e) => e.score_to_par >= 0);
-    if (allGreen && yellowOrRed.length > 0 && rng() < 0.5) {
+    if (allGreen && yellowOrRed.length > 0 && rng() < 0.25) {
       const swapIn = yellowOrRed[Math.floor(rng() * yellowOrRed.length)];
       const swapIdx = Math.floor(rng() * picked.length);
       picked = [...picked];
@@ -377,10 +377,10 @@ function getGolfShareDateStr() {
   return `${GOLF_SHARE_MONTHS[d.getMonth()]} ${d.getDate()}`;
 }
 
-/** Map score to par to share emoji: 🟩 under par, 🟨 par or +1, 🟥 +2 and over. */
+/** Map score to par to share emoji — must match card color bands: green < 0, yellow 0–5, red 6+. */
 function scoreToShareEmoji(scoreToPar) {
   if (scoreToPar < 0) return '🟩';
-  if (scoreToPar <= 1) return '🟨';
+  if (scoreToPar <= 5) return '🟨';
   return '🟥';
 }
 
@@ -388,7 +388,7 @@ function buildGolfShareText(total, forSms) {
   const dateStr = getGolfShareDateStr();
   const scoreStr = formatScore(total);
   const modeLabel = state.easyMode ? 'majors' : 'normal';
-  const emojiRow = (state.picks || []).map(scoreToShareEmoji).join('');
+  const emojiRow = (state.picks || []).map(scoreToShareEmoji).join('\n');
   const lines = [
     `Best Ball (${modeLabel})⛳ ${dateStr}`,
     scoreStr,
