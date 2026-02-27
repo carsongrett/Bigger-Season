@@ -17,6 +17,7 @@ const RANK_WEIGHT_TOP_100 = 3;
 const RANK_WEIGHT_DEFAULT = 1;
 const GOLF_HEADSHOT_URL = 'https://a.espncdn.com/i/headshots/golf/players/full';
 const GOLF_SHARE_URL = 'https://betterseason.live/golf';
+const GOLF_SHARE_URL_ROOT = 'https://betterseason.live'; // use root in X share so tweet card uses main site og-image
 const GOLF_SHARE_HANDLE = '@BetterSznGame';
 const GOLF_SHARE_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const GOLF_HEADSHOT_FALLBACK_SVG = 'data:image/svg+xml,' + encodeURIComponent(
@@ -397,7 +398,8 @@ function buildGolfShareText(total, forSms) {
   const urlPart = GOLF_SHARE_URL ? `\n\n${GOLF_SHARE_URL}` : '';
   const body = lines.join('\n');
   if (forSms) return body + urlPart;
-  const handlePart = GOLF_SHARE_HANDLE ? `\n\n${GOLF_SHARE_HANDLE}\n${GOLF_SHARE_URL}` : urlPart;
+  // X share uses root URL so the tweet card shows the main site og-image, not /golf
+  const handlePart = GOLF_SHARE_HANDLE ? `\n\n${GOLF_SHARE_HANDLE}\n${GOLF_SHARE_URL_ROOT}` : (GOLF_SHARE_URL_ROOT ? `\n\n${GOLF_SHARE_URL_ROOT}` : '');
   return body + handlePart;
 }
 
