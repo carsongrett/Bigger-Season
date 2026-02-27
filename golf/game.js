@@ -409,7 +409,7 @@ function setupGolfShareButtons(shareTextX, shareTextSms) {
       golfShareNativeBtn.onclick = async () => {
         try {
           await navigator.share({
-            text: shareTextX,
+            text: shareTextSms,
             url: GOLF_SHARE_URL,
           });
         } catch (e) {
@@ -425,7 +425,7 @@ function setupGolfShareButtons(shareTextX, shareTextSms) {
     golfShareSmsBtn.onclick = () => { window.location.href = 'sms:?body=' + encodeURIComponent(shareTextSms); };
   }
   if (golfShareXBtn) {
-    golfShareXBtn.classList.toggle('hidden', !!hasWebShare);
+    golfShareXBtn.classList.remove('hidden');
     golfShareXBtn.onclick = () => { window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(shareTextX)); };
   }
 }

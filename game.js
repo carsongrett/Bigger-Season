@@ -1513,7 +1513,7 @@ function setupShareButtons(shareTextX, shareTextSms) {
       shareNativeBtn.onclick = async () => {
         try {
           await navigator.share({
-            text: shareTextX,
+            text: shareTextSms,
             url: SHARE_URL_PLACEHOLDER,
           });
         } catch (e) {
@@ -1529,7 +1529,7 @@ function setupShareButtons(shareTextX, shareTextSms) {
     shareSmsBtn.onclick = () => { window.location.href = 'sms:?body=' + encodeURIComponent(shareTextSms); };
   }
   if (shareXBtn) {
-    shareXBtn.classList.toggle('hidden', !!hasWebShare);
+    shareXBtn.classList.remove('hidden');
     shareXBtn.onclick = () => { window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(shareTextX)); };
   }
 }

@@ -631,6 +631,19 @@ body {
   display: none;
 }
 
+.results-share-buttons .share-btn-x {
+  flex: 0 0 auto;
+  min-width: 2.5rem;
+  padding: 0.65rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.results-share-buttons .share-btn-x .share-x-icon {
+  display: block;
+}
+
 .play-again-btn {
   font: inherit;
   font-weight: 600;
