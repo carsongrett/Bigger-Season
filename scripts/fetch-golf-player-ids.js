@@ -2,10 +2,11 @@
 /**
  * Fetch golf player IDs for Best Ball headshots using ESPN's golf leaderboard API.
  *
- * Calls the ESPN leaderboard endpoint (default + optional tournament IDs) and
- * extracts athlete id + displayName from each competitor. Builds name -> ESPN ID
- * for headshot URLs. Run: node scripts/fetch-golf-player-ids.js
+ * Uses the leaderboard endpoint with event= (not tournamentId=) so that historical
+ * events return that event's competitors. Fetches current event + historical majors
+ * to build a name -> ESPN ID map for headshot URLs.
  *
+ * Run: node scripts/fetch-golf-player-ids.js
  * Headshot URL: https://a.espncdn.com/i/headshots/golf/players/full/{id}.png
  * Output: golf/data/golf-player-ids.json
  */
@@ -16,15 +17,29 @@ const path = require('path');
 
 const LEADERBOARD_URL = 'https://site.api.espn.com/apis/site/v2/sports/golf/leaderboard';
 
-// Major championships only (Masters, PGA Championship, U.S. Open, The Open).
-// IDs from ESPN leaderboard URLs: espn.com/golf/leaderboard?tournamentId=...
-// Note: ESPN's API often returns the current event for any tournamentId; when the
-// current event is a major, we get that field. Multiple IDs still help if behavior differs.
-const TOURNAMENT_IDS = [
-  '401703504', // Masters Tournament (2025)
-  '401580355', // U.S. Open (2024)
-  '401580354', // The Open Championship (2024)
-  '401580353', // PGA Championship (2024)
+// Current/weekend events: default leaderboard (no params) returns the live event.
+
+// Historical majors: use event= (not tournamentId=). tournamentId= returns current
+// event only; event= returns that specific event's competitors.
+// IDs from ESPN URLs: espn.com/golf/leaderboard?tournamentId=...
+const HISTORICAL_EVENT_IDS = [
+  // 2021
+  '401243010', // Masters 2021
+  '401243414', // U.S. Open 2021
+  // 2022
+  '401353232', // Masters 2022
+  '401353226', // PGA Championship 2022
+  '401353222', // U.S. Open 2022
+  // 2023
+  '401465508', // Masters 2023
+  '401465533', // U.S. Open 2023
+  '401465539', // The Open 2023
+  // 2024
+  '401580353', // PGA Championship 2024
+  '401580354', // The Open Championship 2024
+  '401580355', // U.S. Open 2024
+  // 2025
+  '401703504', // Masters Tournament 2025
 ];
 
 function fetch(url) {
@@ -92,11 +107,11 @@ async function main() {
 
   await sleep(300);
 
-  // 2) Additional tournaments
-  for (const tid of TOURNAMENT_IDS) {
+  // 2) Historical majors (event= returns that event's competitors)
+  for (const eventId of HISTORICAL_EVENT_IDS) {
     try {
-      process.stdout.write(`  Tournament ${tid}... `);
-      const json = await fetch(`${LEADERBOARD_URL}?tournamentId=${tid}`);
+      process.stdout.write(`  Event ${eventId}... `);
+      const json = await fetch(`${LEADERBOARD_URL}?event=${eventId}`);
       const batch = extractPlayersFromLeaderboard(json);
       const n = Object.keys(batch).length;
       let added = 0;

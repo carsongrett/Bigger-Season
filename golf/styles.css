@@ -353,9 +353,7 @@ body {
   flex-shrink: 0;
 }
 
-/* Hidden for now; remove display:none to show headshots again */
 .golfer-headshot {
-  display: none;
   width: 44px;
   height: 44px;
   border-radius: 50%;
