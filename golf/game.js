@@ -279,6 +279,7 @@ const resultsStatsPercentile = document.getElementById('results-stats-percentile
 const resultsStatsLeaderboard = document.getElementById('results-stats-leaderboard');
 const resultsStatsLeaderboardListWrap = document.getElementById('results-stats-leaderboard-list-wrap');
 const resultsStatsLeaderboardToggle = document.getElementById('results-stats-leaderboard-toggle');
+const resultsShareSection = document.getElementById('results-share-section');
 const resultsStatsLoading = document.getElementById('results-stats-loading');
 
 let state = {
@@ -541,6 +542,7 @@ function setupGolfShareButtons(shareTextX, shareTextSms) {
         picks: picksParam,
       });
       if (state.lastPercentile != null) params.set('percentile', String(state.lastPercentile));
+      if (state.lastTotalPlayers != null) params.set('totalPlayers', String(state.lastTotalPlayers));
       const lb = state.lastLeaderboard || [];
       if (lb.length > 0) {
         params.set('leaderboard', lb.map((r) => r.score).join(','));
@@ -594,6 +596,7 @@ function renderStatsInModal(stats) {
   if (resultsStatsSection) resultsStatsSection.classList.remove('hidden');
   state.lastPercentile = stats.percentile != null ? stats.percentile : undefined;
   state.lastLeaderboard = stats.leaderboard || [];
+  state.lastTotalPlayers = stats.totalPlayers != null ? stats.totalPlayers : undefined;
 }
 
 function toggleLeaderboardInModal() {
@@ -602,6 +605,7 @@ function toggleLeaderboardInModal() {
   resultsStatsLeaderboardListWrap.classList.toggle('hidden', !isHidden);
   resultsStatsLeaderboardToggle.textContent = isHidden ? 'Hide leaderboard' : 'See Top 10';
   resultsStatsLeaderboardToggle.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+  if (resultsShareSection) resultsShareSection.classList.toggle('hidden', isHidden);
 }
 
 if (resultsStatsLeaderboardToggle) resultsStatsLeaderboardToggle.addEventListener('click', toggleLeaderboardInModal);
@@ -615,6 +619,7 @@ function showResults() {
   setupGolfShareButtons(shareTextX, shareTextSms);
   if (resultsModal) resultsModal.classList.remove('hidden');
   if (resultsStatsSection) resultsStatsSection.classList.add('hidden');
+  if (resultsShareSection) resultsShareSection.classList.remove('hidden');
   if (resultsStatsLoading) {
     resultsStatsLoading.classList.remove('hidden');
   }

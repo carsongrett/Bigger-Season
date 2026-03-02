@@ -98,12 +98,16 @@
     }
 
     .share-card-mode {
-      font-size: 1.25rem;
-      font-weight: 600;
+      font-size: 1.5rem;
+      font-weight: 700;
       color: #e8edea;
       text-transform: uppercase;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.01em;
       white-space: nowrap;
+      line-height: 56px;
+      height: 56px;
+      display: flex;
+      align-items: center;
     }
 
     .share-card-date {
@@ -192,6 +196,14 @@
       position: relative;
     }
 
+    .share-card-players-today {
+      font-size: 1rem;
+      color: #e8edea;
+      margin-top: auto;
+      padding-top: 1rem;
+      text-align: center;
+    }
+
     .share-card-player-row {
       display: flex;
       align-items: center;
@@ -241,6 +253,7 @@
       <div class="share-card-players" id="card-players">
         <!-- 4 rows: headshot + emoji, filled by JS -->
       </div>
+      <div class="share-card-players-today" id="card-players-today"></div>
     </div>
   </div>
 
@@ -268,21 +281,63 @@
         return '🟥';
       }
 
+      function formatDateForCard(raw) {
+        if (!raw || typeof raw !== 'string') return raw;
+        raw = raw.trim();
+        var m = raw.match(/^([A-Za-z]+)\s+(\d{1,2})$/);
+        if (!m) return raw;
+        var mon = m[1];
+        var day = parseInt(m[2], 10);
+        if (!day) return raw;
+        var map = {
+          Jan: 'January', January: 'January',
+          Feb: 'February', February: 'February',
+          Mar: 'March', March: 'March',
+          Apr: 'April', April: 'April',
+          May: 'May',
+          Jun: 'June', June: 'June',
+          Jul: 'July', July: 'July',
+          Aug: 'August', August: 'August',
+          Sep: 'September', Sept: 'September', September: 'September',
+          Oct: 'October', October: 'October',
+          Nov: 'November', November: 'November',
+          Dec: 'December', December: 'December'
+        };
+        var fullMonth = map[mon] || mon;
+        var suffix = 'th';
+        if (day % 100 < 11 || day % 100 > 13) {
+          if (day % 10 === 1) suffix = 'st';
+          else if (day % 10 === 2) suffix = 'nd';
+          else if (day % 10 === 3) suffix = 'rd';
+        }
+        return fullMonth + ' ' + day + suffix;
+      }
+
       var score = params.get('score');
       var date = params.get('date') || 'Mar 1';
       var mode = params.get('mode') || 'majors';
+      var totalPlayers = params.get('totalPlayers');
       var picksStr = params.get('picks') || '';
       var percentile = params.get('percentile');
       var leaderboardStr = params.get('leaderboard');
       var youRank = params.get('youRank');
       youRank = youRank != null && youRank !== '' ? parseInt(youRank, 10) : null;
 
-      var modeLabel = mode === 'hard' ? 'Best Ball (Hard)' : 'Best Ball';
+      var modeLabel = 'Best Ball';
       document.getElementById('card-mode').textContent = modeLabel + ' ⛳';
       document.getElementById('card-score').textContent = formatScore(score);
-      document.getElementById('card-date').textContent = date;
+      document.getElementById('card-date').textContent = formatDateForCard(date);
       document.getElementById('card-brand').textContent = 'betterseason.live/golf';
       document.getElementById('card-handle').textContent = '@BetterSznGame';
+
+      var playersTodayEl = document.getElementById('card-players-today');
+      if (totalPlayers != null && totalPlayers !== '' && parseInt(totalPlayers, 10) > 0) {
+        var n = parseInt(totalPlayers, 10);
+        playersTodayEl.textContent = n + ' player' + (n !== 1 ? 's' : '') + ' today';
+        playersTodayEl.style.display = '';
+      } else {
+        playersTodayEl.style.display = 'none';
+      }
 
       var percentileEl = document.getElementById('card-percentile');
       if (percentile != null && percentile !== '') {

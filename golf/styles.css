@@ -720,6 +720,10 @@ body {
   margin-bottom: 1rem;
 }
 
+.results-share-section.hidden {
+  display: none;
+}
+
 .results-share-grid {
   font-size: 0.85rem;
   line-height: 1.5;
