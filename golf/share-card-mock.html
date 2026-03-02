@@ -406,6 +406,14 @@
         lbEl.appendChild(li);
       });
 
+      function showImageForLongPress(canvas) {
+        var dataUrl = canvas.toDataURL('image/png');
+        var o = document.getElementById('auto-overlay');
+        if (!o) return;
+        o.style.flexDirection = 'column';
+        o.innerHTML = '<span style="margin-bottom:1rem;">Long-press the image below, then choose &quot;Save Image&quot; or &quot;Add to Photos&quot;</span><img src="' + dataUrl + '" alt="Scorecard" style="max-width:100%;max-height:70vh;width:auto;height:auto;border-radius:8px;-webkit-user-select:none;user-select:none;-webkit-touch-callout:default;" />';
+      }
+
       function captureAndSave() {
         html2canvas(document.getElementById('share-card'), {
           scale: 2,
@@ -417,7 +425,7 @@
         }).then(function (canvas) {
           canvas.toBlob(function (blob) {
             if (!blob) {
-              downloadFallback(canvas);
+              if (autoOpen) showImageForLongPress(canvas); else downloadFallback(canvas);
               return;
             }
             var file = new File([blob], 'best-ball-scorecard.png', { type: 'image/png' });
@@ -432,11 +440,12 @@
                   if (o) { o.textContent = 'Saved. You can close this tab.'; }
                 }
               }).catch(function (e) {
-                if (e.name !== 'AbortError') downloadFallback(canvas);
+                if (e.name !== 'AbortError' && autoOpen) showImageForLongPress(canvas);
+                else if (e.name !== 'AbortError') downloadFallback(canvas);
               });
               return;
             }
-            downloadFallback(canvas);
+            if (autoOpen) showImageForLongPress(canvas); else downloadFallback(canvas);
           }, 'image/png');
         });
       }
