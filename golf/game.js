@@ -294,6 +294,11 @@ const resultsShareSection = document.getElementById('results-share-section');
 const resultsStatsLoading = document.getElementById('results-stats-loading');
 const alreadyPlayedImageBtn = document.getElementById('already-played-image-btn');
 const alreadyPlayedTextBtn = document.getElementById('already-played-text-btn');
+const initialsModal = document.getElementById('initials-modal');
+const initialsModalBackdrop = document.getElementById('initials-modal-backdrop');
+const initialsInput = document.getElementById('initials-input');
+const initialsSubmit = document.getElementById('initials-submit');
+const initialsError = document.getElementById('initials-error');
 
 let state = {
   puzzle: null,
@@ -627,7 +632,11 @@ function setupGolfShareButtons(shareTextX, shareTextSms, total) {
       if (lb.length > 0) {
         params.set('leaderboard', lb.map((r) => r.score).join(','));
         const youRow = lb.find((r) => r.isYou);
-        if (youRow) params.set('youRank', String(youRow.rank));
+        if (youRow) {
+          params.set('youRank', String(youRow.rank));
+          const youInitials = window.PlayerInitials && window.PlayerInitials.getInitials && window.PlayerInitials.getInitials();
+          if (youInitials) params.set('youInitials', youInitials);
+        }
       }
       if (state.puzzle && state.puzzle.length >= 4) {
         state.puzzle.forEach((golfer, i) => {
@@ -661,7 +670,11 @@ function setupAlreadyPlayedShareButtons(total) {
       if (lb.length > 0) {
         params.set('leaderboard', lb.map((r) => r.score).join(','));
         const youRow = lb.find((r) => r.isYou);
-        if (youRow) params.set('youRank', String(youRow.rank));
+        if (youRow) {
+          params.set('youRank', String(youRow.rank));
+          const youInitials = window.PlayerInitials && window.PlayerInitials.getInitials && window.PlayerInitials.getInitials();
+          if (youInitials) params.set('youInitials', youInitials);
+        }
       }
       if (state.puzzle && state.puzzle.length >= 4) {
         state.puzzle.forEach((golfer, i) => {
@@ -712,7 +725,8 @@ function renderStatsInModal(stats) {
     (stats.leaderboard || []).forEach((row) => {
       const li = document.createElement('li');
       li.className = 'results-stats-leaderboard-row' + (row.isYou ? ' results-stats-leaderboard-row--you' : '');
-      li.textContent = `${row.rank}. ${formatScore(row.score)}${row.isYou ? ' (You)' : ''}`;
+      const initialsPart = row.initials ? ' ' + row.initials : '';
+      li.textContent = `${row.rank}. ${formatScore(row.score)}${initialsPart}${row.isYou ? ' (You)' : ''}`;
       resultsStatsLeaderboard.appendChild(li);
     });
   }
@@ -738,32 +752,16 @@ function toggleLeaderboardInModal() {
 
 if (resultsStatsLeaderboardToggle) resultsStatsLeaderboardToggle.addEventListener('click', toggleLeaderboardInModal);
 
-function showResults() {
-  const total = state.picks.reduce((a, b) => a + b, 0);
-  setCompletedForSeed(state.seed);
-  setStoredResult(state.seed, {
-    picks: state.picks.slice(),
-    total,
-    lastPercentile: state.lastPercentile,
-    lastTotalPlayers: state.lastTotalPlayers,
-    lastLeaderboard: state.lastLeaderboard || [],
-  });
-  finalTotal.textContent = formatScore(total);
-  const shareTextX = buildGolfShareText(total, false);
-  const shareTextSms = buildGolfShareText(total, true);
-  if (golfShareGrid) golfShareGrid.textContent = buildGolfSharePreview(total);
-  setupGolfShareButtons(shareTextX, shareTextSms, total);
-  if (resultsModal) resultsModal.classList.remove('hidden');
-  if (resultsStatsSection) resultsStatsSection.classList.add('hidden');
-  if (resultsShareSection) resultsShareSection.classList.remove('hidden');
-  if (resultsStatsLoading) {
-    resultsStatsLoading.classList.remove('hidden');
-  }
-
+function runSubmitAndShowStats(total) {
   const puzzleId = state.seed;
   const sport = 'pga';
   const mode = state.easyMode ? 'pick_the_round_majors' : 'pick_the_round';
   const higherIsBetter = false;
+
+  if (resultsModal) resultsModal.classList.remove('hidden');
+  if (resultsStatsSection) resultsStatsSection.classList.add('hidden');
+  if (resultsShareSection) resultsShareSection.classList.remove('hidden');
+  if (resultsStatsLoading) resultsStatsLoading.classList.remove('hidden');
 
   if (window.GolfStats && window.GolfStats.submitAndFetchStats) {
     window.GolfStats.submitAndFetchStats(puzzleId, sport, mode, total, higherIsBetter, function (stats) {
@@ -786,12 +784,70 @@ function showResults() {
   if (resultsModalClose) resultsModalClose.focus();
 }
 
+function showResults() {
+  const total = state.picks.reduce((a, b) => a + b, 0);
+  setCompletedForSeed(state.seed);
+  setStoredResult(state.seed, {
+    picks: state.picks.slice(),
+    total,
+    lastPercentile: state.lastPercentile,
+    lastTotalPlayers: state.lastTotalPlayers,
+    lastLeaderboard: state.lastLeaderboard || [],
+  });
+  finalTotal.textContent = formatScore(total);
+  const shareTextX = buildGolfShareText(total, false);
+  const shareTextSms = buildGolfShareText(total, true);
+  if (golfShareGrid) golfShareGrid.textContent = buildGolfSharePreview(total);
+  setupGolfShareButtons(shareTextX, shareTextSms, total);
+
+  const needInitials = window.PlayerInitials && !window.PlayerInitials.hasInitials();
+  if (needInitials && initialsModal) {
+    initialsModal.classList.remove('hidden');
+    if (initialsError) { initialsError.classList.add('hidden'); initialsError.textContent = ''; }
+    if (initialsInput) { initialsInput.value = ''; initialsInput.focus(); }
+    if (initialsSubmit) {
+      initialsSubmit.onclick = function () {
+        const raw = initialsInput ? initialsInput.value : '';
+        const result = window.PlayerInitials.validate(raw);
+        if (!result.valid) {
+          if (initialsError) {
+            initialsError.textContent = result.message || 'Enter 2 letters.';
+            initialsError.classList.remove('hidden');
+          }
+          return;
+        }
+        window.PlayerInitials.setInitials(result.normalized);
+        initialsModal.classList.add('hidden');
+        runSubmitAndShowStats(total);
+      };
+    }
+    if (initialsModalBackdrop) {
+      initialsModalBackdrop.onclick = function () {
+        initialsModal.classList.add('hidden');
+        runSubmitAndShowStats(total);
+      };
+    }
+    return;
+  }
+
+  runSubmitAndShowStats(total);
+}
+
 function closeResultsModal() {
   if (resultsModal) resultsModal.classList.add('hidden');
 }
 
 if (resultsModalClose) resultsModalClose.addEventListener('click', closeResultsModal);
 if (resultsModalBackdrop) resultsModalBackdrop.addEventListener('click', closeResultsModal);
+
+if (initialsInput) {
+  initialsInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (initialsSubmit) initialsSubmit.click();
+    }
+  });
+}
 
 function showHowToModal() {
   if (howToModal) howToModal.classList.remove('hidden');

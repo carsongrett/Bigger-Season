@@ -785,6 +785,11 @@ const howToBtn = document.getElementById('how-to-btn');
 const howToModal = document.getElementById('how-to-modal');
 const modalClose = document.getElementById('modal-close');
 const homeBtn = document.getElementById('home-btn');
+const initialsBtn = document.getElementById('initials-btn');
+const initialsModal = document.getElementById('initials-modal');
+const initialsInput = document.getElementById('initials-input');
+const initialsSubmit = document.getElementById('initials-submit');
+const initialsError = document.getElementById('initials-error');
 const blindResumeWrap = document.getElementById('blind-resume-wrap');
 const blindResumeScoreEl = document.getElementById('blind-resume-score');
 const blindResumeStats = document.getElementById('blind-resume-stats');
@@ -888,6 +893,7 @@ function initGame(mode) {
   resultsScreen.classList.remove('active');
   blitzTimerEl.classList.remove('visible');
   homeBtn.style.display = 'flex';
+  if (initialsBtn) initialsBtn.style.display = 'none';
 
   if (state.sport === 'nfl' || state.sport === 'nba' || state.sport === 'mlb') {
     document.body.setAttribute('data-sport', state.sport);
@@ -1276,6 +1282,7 @@ function showDailyAlreadyPlayed() {
   roundScreen.classList.remove('active');
   resultsScreen.classList.add('active');
   homeBtn.style.display = 'flex';
+  if (initialsBtn) initialsBtn.style.display = 'none';
   const score = parseInt(getStoredDailyScore(state.sport, state.mode), 10);
   const roundScores = getStoredRoundScores(state.sport, state.mode);
   const total = (state.mode === MODES.ROOKIE_QB) ? 12 : (state.mode === MODES.BLIND_RESUME || state.mode === MODES.BLIND_RESUME_NBA) ? null : 9;
@@ -1601,6 +1608,7 @@ function showResults() {
   roundScreen.classList.remove('active');
   resultsScreen.classList.add('active');
   homeBtn.style.display = 'flex';
+  if (initialsBtn) initialsBtn.style.display = 'none';
   document.body.removeAttribute('data-sport');
 
   if (state.mode === MODES.BLITZ) {
@@ -1650,6 +1658,32 @@ function closeHowToModal() {
   howToModal.setAttribute('aria-hidden', 'true');
 }
 
+function updateInitialsButtonText() {
+  if (!initialsBtn || !window.PlayerInitials) return;
+  const initials = window.PlayerInitials.getInitials();
+  initialsBtn.textContent = initials || 'Set';
+}
+
+function openInitialsModal() {
+  if (!initialsModal) return;
+  initialsModal.classList.add('open');
+  initialsModal.setAttribute('aria-hidden', 'false');
+  if (initialsInput) {
+    initialsInput.value = (window.PlayerInitials && window.PlayerInitials.getInitials()) || '';
+    initialsInput.focus();
+  }
+  if (initialsError) {
+    initialsError.classList.add('hidden');
+    initialsError.textContent = '';
+  }
+}
+
+function closeInitialsModal() {
+  if (!initialsModal) return;
+  initialsModal.classList.remove('open');
+  initialsModal.setAttribute('aria-hidden', 'true');
+}
+
 function goToStartScreen() {
   if (state.blitzTimerId) {
     clearInterval(state.blitzTimerId);
@@ -1660,6 +1694,10 @@ function goToStartScreen() {
   statPicks.style.display = '';
   confirmBtn.style.display = '';
   homeBtn.style.display = 'none';
+  if (initialsBtn) {
+    initialsBtn.style.display = 'flex';
+    updateInitialsButtonText();
+  }
   document.body.removeAttribute('data-sport');
   startScreen.classList.add('active');
   roundScreen.classList.remove('active');
@@ -1748,10 +1786,48 @@ function setupHomeBtn() {
   homeBtn.addEventListener('click', goToStartScreen);
 }
 
+function setupInitialsModal() {
+  if (!initialsBtn || !initialsModal) return;
+  initialsBtn.addEventListener('click', openInitialsModal);
+  if (initialsSubmit) {
+    initialsSubmit.addEventListener('click', () => {
+      const raw = initialsInput ? initialsInput.value : '';
+      const result = window.PlayerInitials && window.PlayerInitials.validate ? window.PlayerInitials.validate(raw) : { valid: false, message: 'Enter 2 letters.' };
+      if (!result.valid) {
+        if (initialsError) {
+          initialsError.textContent = result.message || 'Enter 2 letters.';
+          initialsError.classList.remove('hidden');
+        }
+        return;
+      }
+      if (window.PlayerInitials && window.PlayerInitials.setInitials) window.PlayerInitials.setInitials(result.normalized);
+      closeInitialsModal();
+      updateInitialsButtonText();
+    });
+  }
+  if (initialsModal) {
+    initialsModal.addEventListener('click', (e) => {
+      if (e.target === initialsModal) closeInitialsModal();
+    });
+  }
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && initialsModal && initialsModal.classList.contains('open')) closeInitialsModal();
+  });
+  if (initialsInput) {
+    initialsInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (initialsSubmit) initialsSubmit.click();
+      }
+    });
+  }
+}
+
 async function main() {
   try {
     setupHowToPlay();
     setupHomeBtn();
+    setupInitialsModal();
     setupSportTabs();
     setupModeCards();
     setupStartBtn();

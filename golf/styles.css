@@ -964,6 +964,36 @@ body {
   background: #38b86c;
 }
 
+.initials-modal-p {
+  margin-bottom: 0.75rem;
+}
+
+.initials-input {
+  display: block;
+  width: 100%;
+  max-width: 6rem;
+  margin: 0 auto 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font: inherit;
+  font-size: 1.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  text-align: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-sizing: border-box;
+}
+
+.initials-error {
+  margin: 0 0 0.75rem;
+  font-size: 0.875rem;
+  color: var(--error, #c53030);
+}
+
+.initials-error.hidden {
+  display: none;
+}
+
 /* How to play — detail modal (more details, opened via button) */
 .how-to-detail-modal {
   position: fixed;

@@ -58,6 +58,17 @@
         </div>
       </div>
 
+      <div class="how-to-modal hidden" id="initials-modal" aria-modal="true" aria-labelledby="initials-modal-title">
+        <div class="how-to-modal-backdrop" id="initials-modal-backdrop"></div>
+        <div class="how-to-modal-box">
+          <h2 class="how-to-modal-title" id="initials-modal-title">Leaderboard initials</h2>
+          <p class="initials-modal-p">Enter your initials to appear on the leaderboard (2 letters).</p>
+          <input type="text" id="initials-input" class="initials-input" maxlength="2" placeholder="e.g. JD" autocomplete="off" aria-label="Your initials">
+          <p class="initials-error hidden" id="initials-error" aria-live="polite"></p>
+          <button type="button" class="how-to-modal-btn" id="initials-submit">OK</button>
+        </div>
+      </div>
+
       <div class="results-modal hidden" id="results-modal" aria-modal="true" aria-labelledby="results-title">
         <div class="results-modal-backdrop" id="results-modal-backdrop"></div>
         <div class="results-modal-box">
@@ -157,6 +168,7 @@
       <button type="button" class="scorebug-share hidden" id="scorebug-share-btn">Share</button>
     </footer>
   </div>
+  <script src="../common/player-initials.js"></script>
   <script src="supabase-config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="stats.js"></script>

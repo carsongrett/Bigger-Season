@@ -33,16 +33,19 @@
     if (!supabase) return Promise.resolve({ ok: false, error: 'Supabase not configured' });
 
     const anonymousId = getOrCreateAnonymousId();
+    const initials = (window.PlayerInitials && window.PlayerInitials.getInitials) ? window.PlayerInitials.getInitials() : null;
+    const payload = {
+      puzzle_id: puzzleId,
+      sport: sport,
+      mode: mode,
+      score: score,
+      higher_is_better: higherIsBetter,
+      anonymous_id: anonymousId
+    };
+    if (initials) payload.initials = initials;
     return supabase
       .from('scores')
-      .insert({
-        puzzle_id: puzzleId,
-        sport: sport,
-        mode: mode,
-        score: score,
-        higher_is_better: higherIsBetter,
-        anonymous_id: anonymousId
-      })
+      .insert(payload)
       .select()
       .single()
       .then(function () { return { ok: true, anonymousId: anonymousId }; })
@@ -62,7 +65,7 @@
 
     return supabase
       .from('scores')
-      .select('score, anonymous_id')
+      .select('score, anonymous_id, initials')
       .eq('puzzle_id', puzzleId)
       .order('score', { ascending: !higherIsBetter })
       .then(function (res) {
@@ -84,7 +87,7 @@
 
     // Leaderboard: already sorted by score (asc for golf, desc for main app)
     const leaderboard = rows.slice(0, 10).map(function (r, i) {
-      return { rank: i + 1, score: r.score, anonymousId: r.anonymous_id, isYou: r.anonymous_id === myAnonymousId };
+      return { rank: i + 1, score: r.score, anonymousId: r.anonymous_id, initials: r.initials || null, isYou: r.anonymous_id === myAnonymousId };
     });
 
     // Percentile: for golf (lower better), % of people who did worse (score > myScore)

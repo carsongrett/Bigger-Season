@@ -17,8 +17,10 @@ const path = require('path');
 const PLAYERS_CSV_URL = 'https://github.com/nflverse/nflverse-data/releases/download/players/players.csv';
 const ROSTER_CSV_URL = 'https://github.com/nflverse/nflverse-data/releases/download/rosters/roster_2024.csv';
 
-// Fallback if our CSV name doesn't match; add as needed.
-const NAME_OVERRIDES = {};
+// Overrides when nflverse espn_id is wrong (e.g. duplicate names). Applied after fetch.
+const NAME_OVERRIDES = {
+  'Lamar Jackson': '3916387', // nflverse had 4034849 (wrong); ESPN QB is 3916387
+};
 
 function fetchUrl(url, redirectCount = 0) {
   const maxRedirects = 5;

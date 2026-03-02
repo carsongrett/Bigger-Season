@@ -342,6 +342,7 @@
       var leaderboardStr = params.get('leaderboard');
       var youRank = params.get('youRank');
       youRank = youRank != null && youRank !== '' ? parseInt(youRank, 10) : null;
+      var youInitials = params.get('youInitials') || '';
 
       var modeLabel = (mode === 'hard' || mode === 'normal') ? 'Best Ball (Hard)' : 'Best Ball';
       document.getElementById('card-mode').textContent = modeLabel + ' ⛳';
@@ -425,7 +426,8 @@
         var isYou = youRank != null && rank === youRank;
         var li = document.createElement('li');
         li.className = isYou ? 'you' : '';
-        li.textContent = rank + '. ' + formatScore(s) + (isYou ? ' (You)' : '');
+        var initialsPart = (isYou && youInitials) ? ' ' + youInitials : '';
+        li.textContent = rank + '. ' + formatScore(s) + initialsPart + (isYou ? ' (You)' : '');
         lbEl.appendChild(li);
       });
 
