@@ -508,7 +508,7 @@ function buildGolfSharePreview(total) {
   return lines.join('\n');
 }
 
-function setupGolfShareButtons(shareTextX, shareTextSms) {
+function setupGolfShareButtons(shareTextX, shareTextSms, total) {
   const hasWebShare = typeof navigator !== 'undefined' && navigator.share;
   if (golfShareNativeBtn) {
     if (hasWebShare) {
@@ -617,7 +617,7 @@ function showResults() {
   const shareTextX = buildGolfShareText(total, false);
   const shareTextSms = buildGolfShareText(total, true);
   if (golfShareGrid) golfShareGrid.textContent = buildGolfSharePreview(total);
-  setupGolfShareButtons(shareTextX, shareTextSms);
+  setupGolfShareButtons(shareTextX, shareTextSms, total);
   if (resultsModal) resultsModal.classList.remove('hidden');
   if (resultsStatsSection) resultsStatsSection.classList.add('hidden');
   if (resultsShareSection) resultsShareSection.classList.remove('hidden');
