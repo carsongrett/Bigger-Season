@@ -23,6 +23,13 @@ const GOLF_SHARE_URL = 'https://betterseason.live/golf';
 const GOLF_SHARE_URL_ROOT = 'https://betterseason.live'; // use root in X share so tweet card uses main site og-image
 const GOLF_SHARE_HANDLE = '@BetterSznGame';
 const GOLF_SHARE_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+/** Daily puzzle and leaderboard use this timezone; day rolls at midnight Central. */
+const DAILY_TIMEZONE = 'America/Chicago';
+/** localStorage key prefix for "completed this seed" (one play per day per mode). */
+const GOLF_COMPLETED_KEY_PREFIX = 'betterseason_golf_completed_';
+/** localStorage key prefix for stored result (picks, total, stats) so we can show grid + share on "already played". */
+const GOLF_RESULT_KEY_PREFIX = 'betterseason_golf_result_';
+
 const GOLF_HEADSHOT_FALLBACK_SVG = 'data:image/svg+xml,' + encodeURIComponent(
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 120" fill="%234a5568"><ellipse cx="50" cy="38" rx="22" ry="26"/><path d="M15 120c0-22 15-40 35-40s35 18 35 40z"/></svg>'
 );
@@ -253,10 +260,8 @@ const resultsModal = document.getElementById('results-modal');
 const resultsModalClose = document.getElementById('results-modal-close');
 const resultsModalBackdrop = document.getElementById('results-modal-backdrop');
 const finalTotal = document.getElementById('final-total');
-const playAgainBtn = document.getElementById('play-again-btn');
 const scorebugEl = document.getElementById('scorebug');
 const scorebugValue = document.getElementById('scorebug-value');
-const scorebugPlayAgain = document.getElementById('scorebug-play-again');
 const scorebugShareBtn = document.getElementById('scorebug-share-btn');
 const howToModal = document.getElementById('how-to-modal');
 const howToModalBackdrop = document.getElementById('how-to-modal-backdrop');
@@ -287,6 +292,8 @@ const resultsStatsLeaderboardListWrap = document.getElementById('results-stats-l
 const resultsStatsLeaderboardToggle = document.getElementById('results-stats-leaderboard-toggle');
 const resultsShareSection = document.getElementById('results-share-section');
 const resultsStatsLoading = document.getElementById('results-stats-loading');
+const alreadyPlayedImageBtn = document.getElementById('already-played-image-btn');
+const alreadyPlayedTextBtn = document.getElementById('already-played-text-btn');
 
 let state = {
   puzzle: null,
@@ -294,8 +301,9 @@ let state = {
   seed: 0,
   golfPlayerIds: {}, // name -> ESPN id for headshots
   easyMode: (function () {
-    return new URLSearchParams(window.location.search).get('mode') !== 'normal';
-  })(), // default = majors; ?mode=normal = Best Ball (Hard)
+    const m = new URLSearchParams(window.location.search).get('mode');
+    return m !== 'hard' && m !== 'normal'; // no param or other = majors; ?mode=hard or ?mode=normal = Best Ball (Hard)
+  })(),
 };
 let hasShownHowToThisSession = false;
 
@@ -322,6 +330,65 @@ function getGolfHeadshotUrl(playerName) {
   return `${GOLF_HEADSHOT_URL}/${id}.png`;
 }
 
+function getCompletedForSeed(seed) {
+  if (!seed || typeof seed !== 'string') return false;
+  try {
+    return localStorage.getItem(GOLF_COMPLETED_KEY_PREFIX + seed) === '1';
+  } catch (e) {
+    return false;
+  }
+}
+
+function setCompletedForSeed(seed) {
+  if (!seed || typeof seed !== 'string') return;
+  try {
+    localStorage.setItem(GOLF_COMPLETED_KEY_PREFIX + seed, '1');
+  } catch (e) {}
+}
+
+function getStoredResult(seed) {
+  if (!seed || typeof seed !== 'string') return null;
+  try {
+    const raw = localStorage.getItem(GOLF_RESULT_KEY_PREFIX + seed);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    return data && Array.isArray(data.picks) && typeof data.total === 'number' ? data : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function setStoredResult(seed, data) {
+  if (!seed || typeof seed !== 'string' || !data) return;
+  try {
+    localStorage.setItem(GOLF_RESULT_KEY_PREFIX + seed, JSON.stringify(data));
+  } catch (e) {}
+}
+
+/**
+ * Current calendar date in DAILY_TIMEZONE (America/Chicago). Used so the puzzle day rolls at midnight Central.
+ */
+function getTodayCentralDateString() {
+  try {
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: DAILY_TIMEZONE,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+    const parts = formatter.formatToParts(new Date());
+    const get = (type) => (parts.find((p) => p.type === type) || {}).value || '';
+    const year = get('year');
+    const month = get('month');
+    const day = get('day');
+    if (year && month && day) return `${year}-${month}-${day}`;
+  } catch (e) {
+    if (typeof console !== 'undefined' && console.warn) console.warn('Central date fallback:', e);
+  }
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 /** Daily seed so everyone gets the same puzzle. Use ?test=1 or ?seed=YYYY-MM-DD to force a fixed puzzle for testing. */
 function getSeed() {
   const params = new URLSearchParams(window.location.search);
@@ -334,8 +401,7 @@ function getSeed() {
     const fixed = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     return state.easyMode ? `${fixed}_majors` : `${fixed}_all`;
   }
-  const d = new Date();
-  const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const dateStr = getTodayCentralDateString();
   return state.easyMode ? `${dateStr}_majors` : `${dateStr}_all`;
 }
 
@@ -456,9 +522,6 @@ function updateScorebug() {
   if (!scorebugEl || !scorebugValue) return;
   const defined = state.picks.filter((p) => p !== undefined);
   scorebugEl.classList.remove('scorebug--under', 'scorebug--over', 'scorebug--even');
-  if (scorebugPlayAgain) {
-    scorebugPlayAgain.classList.toggle('hidden', defined.length !== 4);
-  }
   if (scorebugShareBtn) {
     scorebugShareBtn.classList.toggle('hidden', defined.length !== 4);
   }
@@ -474,6 +537,13 @@ function updateScorebug() {
 }
 
 function getGolfShareDateStr() {
+  const dateStr = getTodayCentralDateString();
+  const parts = dateStr.split('-').map(Number);
+  if (parts.length >= 3) {
+    const month = parts[1];
+    const day = parts[2];
+    if (month >= 1 && month <= 12) return `${GOLF_SHARE_MONTHS[month - 1]} ${day}`;
+  }
   const d = new Date();
   return `${GOLF_SHARE_MONTHS[d.getMonth()]} ${d.getDate()}`;
 }
@@ -522,10 +592,11 @@ function setupGolfShareButtons(shareTextX, shareTextSms, total) {
   if (golfShareNativeBtn) {
     if (hasWebShare) {
       golfShareNativeBtn.classList.remove('hidden');
+      const shareTextOnly = buildGolfSharePreview(total); // no URL in text; URL is passed separately
       golfShareNativeBtn.onclick = async () => {
         try {
           await navigator.share({
-            text: shareTextSms,
+            text: shareTextOnly,
             url: GOLF_SHARE_URL,
           });
         } catch (e) {
@@ -566,6 +637,53 @@ function setupGolfShareButtons(shareTextX, shareTextSms, total) {
       }
       params.set('auto', '1');
       window.open('share-card-mock.html?' + params.toString(), '_blank', 'noopener');
+    };
+  }
+}
+
+function setupAlreadyPlayedShareButtons(total) {
+  const shareTextSms = buildGolfShareText(total, true);
+  const shareTextOnly = buildGolfSharePreview(total);
+  const hasWebShare = typeof navigator !== 'undefined' && navigator.share;
+  if (alreadyPlayedImageBtn) {
+    alreadyPlayedImageBtn.onclick = () => {
+      const dateStr = getGolfShareDateStr();
+      const picksParam = (state.picks || []).map((p) => p).join(',');
+      const params = new URLSearchParams({
+        score: String(total),
+        date: dateStr,
+        mode: state.easyMode ? 'majors' : 'hard',
+        picks: picksParam,
+      });
+      if (state.lastPercentile != null) params.set('percentile', String(state.lastPercentile));
+      if (state.lastTotalPlayers != null) params.set('totalPlayers', String(state.lastTotalPlayers));
+      const lb = state.lastLeaderboard || [];
+      if (lb.length > 0) {
+        params.set('leaderboard', lb.map((r) => r.score).join(','));
+        const youRow = lb.find((r) => r.isYou);
+        if (youRow) params.set('youRank', String(youRow.rank));
+      }
+      if (state.puzzle && state.puzzle.length >= 4) {
+        state.puzzle.forEach((golfer, i) => {
+          const url = getGolfHeadshotUrl(golfer.player_name);
+          if (url) params.set('headshot' + (i + 1), url);
+        });
+      }
+      params.set('auto', '1');
+      window.open('share-card-mock.html?' + params.toString(), '_blank', 'noopener');
+    };
+  }
+  if (alreadyPlayedTextBtn) {
+    alreadyPlayedTextBtn.onclick = async () => {
+      if (hasWebShare) {
+        try {
+          await navigator.share({ text: shareTextOnly, url: GOLF_SHARE_URL });
+        } catch (e) {
+          if (e.name !== 'AbortError') console.error('Share failed:', e);
+        }
+      } else {
+        window.location.href = 'sms:?body=' + encodeURIComponent(shareTextSms);
+      }
     };
   }
 }
@@ -622,6 +740,14 @@ if (resultsStatsLeaderboardToggle) resultsStatsLeaderboardToggle.addEventListene
 
 function showResults() {
   const total = state.picks.reduce((a, b) => a + b, 0);
+  setCompletedForSeed(state.seed);
+  setStoredResult(state.seed, {
+    picks: state.picks.slice(),
+    total,
+    lastPercentile: state.lastPercentile,
+    lastTotalPlayers: state.lastTotalPlayers,
+    lastLeaderboard: state.lastLeaderboard || [],
+  });
   finalTotal.textContent = formatScore(total);
   const shareTextX = buildGolfShareText(total, false);
   const shareTextSms = buildGolfShareText(total, true);
@@ -642,13 +768,22 @@ function showResults() {
   if (window.GolfStats && window.GolfStats.submitAndFetchStats) {
     window.GolfStats.submitAndFetchStats(puzzleId, sport, mode, total, higherIsBetter, function (stats) {
       if (resultsStatsLoading) resultsStatsLoading.classList.add('hidden');
-      if (stats) renderStatsInModal(stats);
+      if (stats) {
+        renderStatsInModal(stats);
+        setStoredResult(state.seed, {
+          picks: state.picks.slice(),
+          total,
+          lastPercentile: state.lastPercentile,
+          lastTotalPlayers: state.lastTotalPlayers,
+          lastLeaderboard: state.lastLeaderboard || [],
+        });
+      }
     });
   } else {
     if (resultsStatsLoading) resultsStatsLoading.classList.add('hidden');
   }
 
-  playAgainBtn.focus();
+  if (resultsModalClose) resultsModalClose.focus();
 }
 
 function closeResultsModal() {
@@ -693,7 +828,7 @@ if (leaveGameHardModalBackdrop) leaveGameHardModalBackdrop.addEventListener('cli
 if (leaveGameHardStay) leaveGameHardStay.addEventListener('click', closeLeaveGameHardModal);
 if (leaveGameHardGo) leaveGameHardGo.addEventListener('click', () => {
   closeLeaveGameHardModal();
-  window.location.href = window.location.pathname + '?mode=normal';
+  window.location.href = window.location.pathname + '?mode=hard';
 });
 
 function showLeaveGameEasyModal() {
@@ -722,13 +857,6 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-function handlePlayAgain() {
-  closeResultsModal();
-  initGame();
-}
-
-playAgainBtn.addEventListener('click', handlePlayAgain);
-if (scorebugPlayAgain) scorebugPlayAgain.addEventListener('click', handlePlayAgain);
 if (scorebugShareBtn) scorebugShareBtn.addEventListener('click', showResults);
 
 function loadGolfPlayerIds() {
@@ -810,8 +938,41 @@ function updatePageTitleAndHeader() {
   }
 }
 
+const gridWrapper = document.getElementById('grid-wrapper');
+const alreadyPlayedWrap = document.getElementById('already-played-wrap');
+
+function showAlreadyPlayedView(seed, result) {
+  const modeLabel = state.easyMode ? 'Best Ball' : 'Best Ball (Hard)';
+  if (gridWrapper) gridWrapper.classList.remove('hidden');
+  if (alreadyPlayedWrap) {
+    const msg = alreadyPlayedWrap.querySelector('.already-played-msg');
+    const sub = alreadyPlayedWrap.querySelector('.already-played-sub');
+    const shareBtns = alreadyPlayedWrap.querySelector('.already-played-share-buttons');
+    if (msg) msg.textContent = "You've already played " + modeLabel + ' today.';
+    if (sub) sub.textContent = 'Come back tomorrow for a new puzzle.';
+    if (shareBtns) shareBtns.classList.toggle('hidden', !result || typeof result.total !== 'number');
+    alreadyPlayedWrap.classList.remove('hidden');
+    if (result && typeof result.total === 'number') setupAlreadyPlayedShareButtons(result.total);
+  }
+  if (scorebugValue && state.picks && state.picks.length === 4) {
+    const sum = state.picks.reduce((a, b) => a + b, 0);
+    scorebugValue.textContent = formatScore(sum);
+    scorebugEl.classList.remove('scorebug--under', 'scorebug--over', 'scorebug--even');
+    if (sum < 0) scorebugEl.classList.add('scorebug--under');
+    else if (sum > 0) scorebugEl.classList.add('scorebug--over');
+    else scorebugEl.classList.add('scorebug--even');
+    if (scorebugShareBtn) scorebugShareBtn.classList.remove('hidden');
+  }
+}
+
+function hideAlreadyPlayedView() {
+  if (alreadyPlayedWrap) alreadyPlayedWrap.classList.add('hidden');
+  if (gridWrapper) gridWrapper.classList.remove('hidden');
+}
+
 function initGame() {
   const seed = getSeed();
+  const wasCompleted = getCompletedForSeed(seed);
   state = {
     puzzle: null,
     picks: [],
@@ -820,9 +981,23 @@ function initGame() {
     easyMode: state.easyMode,
   };
   updatePageTitleAndHeader();
+  if (!wasCompleted) hideAlreadyPlayedView();
   Promise.all([loadGolfPlayerIds(), loadData(state.easyMode), loadRankings(), loadTopPlayersAlltime()])
     .then(([, rows, rankMap, alltimeSet]) => {
       state.puzzle = buildPuzzle(rows, seed, rankMap, alltimeSet);
+      if (wasCompleted) {
+        const result = getStoredResult(seed);
+        if (result) {
+          state.picks = result.picks.slice();
+          state.lastPercentile = result.lastPercentile;
+          state.lastTotalPlayers = result.lastTotalPlayers;
+          state.lastLeaderboard = result.lastLeaderboard || [];
+        }
+        renderGrid();
+        updateScorebug();
+        showAlreadyPlayedView(seed, result);
+        return;
+      }
       updateScorebug();
       renderGrid();
       if (!hasShownHowToThisSession) {

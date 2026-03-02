@@ -25,6 +25,14 @@
       <div class="grid-wrapper" id="grid-wrapper">
         <div class="grid" id="grid" role="grid" aria-label="Golfers and rounds"></div>
       </div>
+      <div class="already-played-wrap hidden" id="already-played-wrap" aria-live="polite">
+        <p class="already-played-msg" id="already-played-msg">You've already played today.</p>
+        <p class="already-played-sub">Come back tomorrow for a new puzzle.</p>
+        <div class="already-played-share-buttons results-share-buttons">
+          <button type="button" class="share-btn" id="already-played-image-btn">Share Scorecard (image)</button>
+          <button type="button" class="share-btn" id="already-played-text-btn">Share Scorecard (text)</button>
+        </div>
+      </div>
 
       <div class="mode-toggle-wrap">
         <div class="mode-toggle-group hidden" id="easy-mode-btn-wrap">
@@ -75,7 +83,6 @@
               <button type="button" class="share-btn share-btn-fallback" id="golf-share-sms-btn">Share Scorecard (text)</button>
             </div>
           </div>
-          <button type="button" class="play-again-btn" id="play-again-btn">Play again</button>
         </div>
       </div>
 
@@ -148,7 +155,6 @@
       <span class="scorebug-label">YOUR SCORE</span>
       <span class="scorebug-value" id="scorebug-value">—</span>
       <button type="button" class="scorebug-share hidden" id="scorebug-share-btn">Share</button>
-      <button type="button" class="scorebug-play-again hidden" id="scorebug-play-again">Play again</button>
     </footer>
   </div>
   <script src="supabase-config.js"></script>

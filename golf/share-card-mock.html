@@ -343,7 +343,7 @@
       var youRank = params.get('youRank');
       youRank = youRank != null && youRank !== '' ? parseInt(youRank, 10) : null;
 
-      var modeLabel = mode === 'hard' ? 'Best Ball (Hard)' : 'Best Ball';
+      var modeLabel = (mode === 'hard' || mode === 'normal') ? 'Best Ball (Hard)' : 'Best Ball';
       document.getElementById('card-mode').textContent = modeLabel + ' ⛳';
       document.getElementById('card-score').textContent = formatScore(score);
       document.getElementById('card-date').textContent = formatDateForCard(date);
