@@ -19,14 +19,14 @@ body {
   overscroll-behavior: none;
 }
 
-/* Stadium-style gradient background */
+/* Stadium-style gradient background (warm tint to match amber accent) */
 body::before {
   content: '';
   position: fixed;
   inset: 0;
-  background: radial-gradient(ellipse 120% 80% at 50% 0%, rgba(20, 40, 70, 0.4) 0%, transparent 50%),
-              radial-gradient(ellipse 80% 120% at 50% 100%, rgba(30, 25, 15, 0.25) 0%, transparent 50%),
-              linear-gradient(180deg, #0a0c10 0%, #08090c 100%);
+  background: radial-gradient(ellipse 120% 80% at 50% 0%, rgba(40, 30, 20, 0.35) 0%, transparent 50%),
+              radial-gradient(ellipse 80% 120% at 50% 100%, rgba(35, 25, 15, 0.3) 0%, transparent 50%),
+              linear-gradient(180deg, #0c0b0a 0%, #08090c 100%);
   pointer-events: none;
   z-index: 0;
 }
@@ -132,9 +132,10 @@ body::before {
 }
 
 .sport-prompt {
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 1.1rem;
-  letter-spacing: 0.15em;
+  font-weight: 600;
+  letter-spacing: 0.05em;
   color: #a0a0a0;
 }
 
@@ -251,9 +252,10 @@ a.sport-card {
 }
 
 .start-prompt {
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 1.25rem;
-  letter-spacing: 0.15em;
+  font-weight: 600;
+  letter-spacing: 0.05em;
   color: #a0a0a0;
 }
 
@@ -303,6 +305,12 @@ a.sport-card {
   display: none;
 }
 
+/* Blind Resume modes – hidden for now; remove this block to show again */
+.mode-card[data-mode="blind_resume"],
+.mode-card[data-mode="blind_resume_nba"] {
+  display: none !important;
+}
+
 .mode-card-badge {
   position: absolute;
   top: 0.5rem;
@@ -323,9 +331,9 @@ a.sport-card {
 }
 
 .mode-card-badge--unlimited {
-  background: rgba(59, 130, 246, 0.15);
-  color: #60a5fa;
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
 }
 
 .mode-card:hover {
@@ -339,9 +347,10 @@ a.sport-card {
 }
 
 .mode-card-title {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.25rem;
-  letter-spacing: 0.1em;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
   color: #f0f0f0;
 }
 
@@ -417,9 +426,10 @@ a.sport-card {
 }
 
 .modal h2 {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.5rem;
-  letter-spacing: 0.08em;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
   margin-bottom: 1rem;
   color: #fff;
 }
@@ -441,7 +451,7 @@ a.sport-card {
   font-size: 0.95rem;
   font-weight: 700;
   border: none;
-  background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
+  background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
   color: white;
   border-radius: 10px;
   cursor: pointer;
@@ -449,7 +459,7 @@ a.sport-card {
 }
 
 .modal-close:hover {
-  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 4px 20px rgba(245, 158, 11, 0.4);
 }
 
 .modal-close:active {
@@ -504,15 +514,16 @@ a.sport-card {
 .position-badge,
 .round-badge {
   display: inline-block;
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.25rem;
-  font-weight: 400;
-  letter-spacing: 0.2em;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   color: #f59e0b;
-  background: rgba(245, 158, 11, 0.12);
+  background: #1a1a1a;
   padding: 0.35rem 1rem;
   border-radius: 6px;
-  border: 1px solid rgba(245, 158, 11, 0.25);
+  border: 1px solid rgba(245, 158, 11, 0.5);
 }
 
 .blitz-timer {
@@ -521,15 +532,15 @@ a.sport-card {
 
 .blitz-timer.visible {
   display: inline-block;
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.25rem;
-  font-weight: 400;
-  letter-spacing: 0.2em;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
   color: #f59e0b;
-  background: rgba(245, 158, 11, 0.12);
+  background: #1a1a1a;
   padding: 0.35rem 1rem;
   border-radius: 6px;
-  border: 1px solid rgba(245, 158, 11, 0.25);
+  border: 1px solid rgba(245, 158, 11, 0.5);
 }
 
 .round-instruction {
@@ -555,8 +566,8 @@ a.sport-card {
   justify-content: center;
   text-align: center;
   padding: 1rem 0.75rem;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #0d0d0d;
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 12px;
   position: relative;
   overflow: hidden;
@@ -594,7 +605,7 @@ a.sport-card {
   margin: 0 auto 0.5rem;
   border-radius: 50%;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.06);
+  background: #1a1a1a;
   flex-shrink: 0;
 }
 
@@ -609,11 +620,11 @@ a.sport-card {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.1rem;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
   letter-spacing: 0.15em;
   color: rgba(255, 255, 255, 0.5);
-  font-weight: 400;
 }
 
 /* Stat picks - fill the space */
@@ -626,79 +637,135 @@ a.sport-card {
   justify-content: space-evenly;
 }
 
-.stat-row {
+.stat-table-wrap {
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  flex-shrink: 0;
 }
 
-.stat-label {
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: #a0a0a0;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+.stat-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.stat-table th,
+.stat-table td {
+  padding: 0.45rem 0.5rem;
+  vertical-align: middle;
   text-align: center;
 }
 
-.stat-buttons {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
+.stat-table th {
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #888;
 }
 
-.stat-btn {
-  min-height: 52px;
-  padding: 0.65rem 0.5rem;
-  font-size: 0.95rem;
+.stat-table th:first-child {
+  text-align: left;
+  padding-left: 0;
+}
+
+.stat-table td:first-child,
+.stat-table .stat-label {
+  font-size: 1.2rem;
   font-weight: 700;
-  display: inline-flex;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-align: left;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.pick-cell {
+  min-width: 0;
+}
+
+.pick-cell-inner {
+  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  border: 2px solid rgba(255, 255, 255, 0.12);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
-  color: #f0f0f0;
-  border-radius: 10px;
+}
+
+.headshot-pick {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #1a1a1a;
+  border: 2px solid rgba(255, 255, 255, 0.2);
   cursor: pointer;
   transition: all 0.2s ease;
+  flex-shrink: 0;
+  position: relative;
+  padding: 0;
 }
 
-.stat-btn:hover {
-  border-color: rgba(255, 255, 255, 0.25);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%);
+.headshot-pick img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
-.stat-btn:active {
-  transform: scale(0.98);
+.headshot-pick:hover {
+  border-color: rgba(255, 255, 255, 0.4);
+  background: #252525;
 }
 
-.stat-btn.selected,
-.stat-btn.picked {
-  border-color: #3b82f6;
-  background: linear-gradient(180deg, rgba(59, 130, 246, 0.25) 0%, rgba(59, 130, 246, 0.12) 100%);
-  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.3);
+.headshot-pick.selected {
+  border-color: #f59e0b;
+  background: #2d2508;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.5);
 }
 
-.stat-btn .feedback-check {
-  margin-left: 0.35rem;
-  color: #22c55e;
-  font-size: 1em;
+.headshot-pick.picked-correct::after,
+.headshot-pick.picked-wrong::after {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
 }
 
-.stat-btn .feedback-wrong {
-  margin-left: 0.35rem;
-  color: #ef4444;
-  font-size: 1em;
+.headshot-pick.picked-correct::after {
+  content: '✓';
+  background: #22c55e;
+  color: #fff;
 }
 
-.stat-row.revealed .stat-label {
-  flex: none;
+.headshot-pick.picked-wrong::after {
+  content: '✗';
+  background: #ef4444;
+  color: #fff;
 }
 
-.stat-values {
-  font-size: 0.7rem;
-  color: #888;
+.stat-table .stat-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #e0e0e0;
+  margin-top: 0.2rem;
+}
+
+.stat-table tr.revealed .headshot-pick {
+  cursor: default;
+  pointer-events: none;
+}
+
+.stat-table tr.revealed .headshot-pick:hover {
+  border-color: inherit;
+  background: inherit;
 }
 
 /* Confirm button */
@@ -711,17 +778,17 @@ a.sport-card {
   font-family: 'Inter', sans-serif;
   letter-spacing: 0.03em;
   border: none;
-  background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
+  background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
   color: white;
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.35);
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.35);
 }
 
 .confirm-btn:hover:not(:disabled) {
-  background: linear-gradient(180deg, #60a5fa 0%, #3b82f6 100%);
-  box-shadow: 0 6px 24px rgba(59, 130, 246, 0.45);
+  background: linear-gradient(180deg, #fbbf24 0%, #f59e0b 100%);
+  box-shadow: 0 6px 24px rgba(245, 158, 11, 0.45);
   transform: translateY(-1px);
 }
 
@@ -730,10 +797,11 @@ a.sport-card {
 }
 
 .confirm-btn:disabled {
-  background: rgba(255, 255, 255, 0.06);
+  background: #252525;
   color: #666;
   cursor: not-allowed;
   box-shadow: none;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 /* ========== RESULTS SCREEN ========== */
@@ -746,9 +814,11 @@ a.sport-card {
 }
 
 .results-label {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.1rem;
-  letter-spacing: 0.2em;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   color: #a0a0a0;
   margin-bottom: -0.35rem;
 }
@@ -839,10 +909,10 @@ a.sport-card {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.25rem;
-  font-weight: 400;
-  letter-spacing: 0.2em;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   padding: 0.35rem 1rem;
   color: #f59e0b;
@@ -914,8 +984,8 @@ a.sport-card {
   padding: 0.75rem 1.5rem;
   font-size: 0.95rem;
   font-weight: 700;
-  border: 2px solid #3b82f6;
-  background: linear-gradient(180deg, rgba(59, 130, 246, 0.2) 0%, rgba(59, 130, 246, 0.1) 100%);
+  border: 2px solid #f59e0b;
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.2) 0%, rgba(245, 158, 11, 0.1) 100%);
   color: #f0f0f0;
   border-radius: 10px;
   cursor: pointer;
@@ -923,8 +993,8 @@ a.sport-card {
 }
 
 .new-game-btn:hover {
-  background: linear-gradient(180deg, rgba(59, 130, 246, 0.3) 0%, rgba(59, 130, 246, 0.15) 100%);
-  border-color: #60a5fa;
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.3) 0%, rgba(245, 158, 11, 0.15) 100%);
+  border-color: #fbbf24;
 }
 
 /* ========== BLIND RESUME ========== */
@@ -949,16 +1019,17 @@ a.sport-card {
 }
 
 .blind-resume-score-label {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.1rem;
-  letter-spacing: 0.15em;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
   color: #f59e0b;
 }
 
 .blind-resume-score-value {
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 1.5rem;
-  font-weight: 400;
+  font-weight: 700;
   color: #fff;
   min-width: 2.5rem;
   text-align: right;
@@ -1023,7 +1094,7 @@ a.sport-card {
 }
 
 .blind-resume-input:focus {
-  border-color: #3b82f6;
+  border-color: #f59e0b;
 }
 
 .blind-resume-input::placeholder {
@@ -1059,7 +1130,7 @@ a.sport-card {
 
 .blind-resume-dropdown-item:hover,
 .blind-resume-dropdown-item.highlighted {
-  background: rgba(59, 130, 246, 0.2);
+  background: rgba(245, 158, 11, 0.2);
 }
 
 .blind-resume-feedback {

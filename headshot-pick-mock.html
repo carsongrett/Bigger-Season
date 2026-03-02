@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Headshot pick mock — Better Season</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; -webkit-overflow-scrolling: touch; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #08090c;
+      background-image: url('logos/tall football painting.png');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      color: #f5f5f5;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    }
+    body[data-sport="nba"] { background-image: url('logos/tall basketball painting.png'); }
+    body[data-sport="mlb"] { background-image: url('logos/tall baseball painting.png'); }
+    /* Dark overlay so content stays readable over background image. Remove or soften to taste. */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0.88) 50%, rgba(0, 0, 0, 0.92) 100%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    #app { position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column; min-height: 0; overflow-y: auto; padding: 1rem; }
+
+    /* Header */
+    .round-header { flex-shrink: 0; margin-bottom: 0.5rem; text-align: center; }
+    .header-badges { display: flex; align-items: center; justify-content: center; gap: 0.5rem; flex-wrap: wrap; }
+    .position-badge, .round-badge {
+      display: inline-block;
+      font-family: 'Inter', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #f59e0b;
+      background: #1a1a1a;
+      padding: 0.4rem 1.1rem;
+      border-radius: 6px;
+      border: 1px solid rgba(245, 158, 11, 0.5);
+    }
+    .round-instruction { font-size: 1.1rem; font-weight: 600; color: #c0c0c0; margin-top: 0.35rem; }
+
+    /* Matchup */
+    .matchup {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 0.75rem;
+      align-items: stretch;
+      margin-bottom: 0.85rem;
+      flex-shrink: 0;
+    }
+    .player {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      text-align: center;
+      padding: 0.65rem 0.6rem;
+      background: #0d0d0d;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+    .player::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 4px;
+      background: linear-gradient(180deg, #f59e0b, #d97706);
+      border-radius: 4px 0 0 4px;
+    }
+    .player-headshot {
+      width: 92px;
+      height: 92px;
+      margin: 0 auto 0.35rem;
+      border-radius: 50%;
+      overflow: hidden;
+      background: #1a1a1a;
+      flex-shrink: 0;
+    }
+    .player-headshot img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .player-name { font-size: clamp(1.05rem, 3.5vw, 1.25rem); font-weight: 700; line-height: 1.25; color: #fff; }
+    .player-meta { font-size: 0.95rem; font-weight: 600; color: #a8a8a8; margin-top: 0.2rem; }
+    .vs {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Inter', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    /* Stat table - headshot pick */
+    .stat-table-wrap { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 0; }
+    .stat-table { width: 100%; border-collapse: collapse; }
+    .stat-table th, .stat-table td { padding: 0.45rem 0.5rem; vertical-align: middle; text-align: center; }
+    .stat-table th { font-size: 0.9rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: #888; }
+    .stat-table th:first-child { text-align: left; padding-left: 0; }
+    .stat-table td:first-child,
+    .stat-table .stat-label {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #fff;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      text-align: left;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    .stat-row-pick {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+    }
+    .headshot-pick {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      overflow: hidden;
+      background: #1a1a1a;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+      position: relative;
+    }
+    .headshot-pick img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .headshot-pick:hover { border-color: rgba(255, 255, 255, 0.4); background: #252525; }
+    .headshot-pick.selected {
+      border-color: #f59e0b;
+      background: #2d2508;
+      box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.5);
+    }
+    .headshot-pick.picked-correct::after,
+    .headshot-pick.picked-wrong::after {
+      position: absolute;
+      right: 3px;
+      bottom: 3px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .headshot-pick.picked-correct::after { content: '✓'; background: #22c55e; color: #fff; }
+    .headshot-pick.picked-wrong::after { content: '✗'; background: #ef4444; color: #fff; }
+    .stat-value {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #e0e0e0;
+      margin-top: 0.2rem;
+    }
+    .stat-table tr.revealed .headshot-pick { cursor: default; pointer-events: none; }
+    .stat-table tr.revealed .headshot-pick:hover { border-color: inherit; }
+
+    .confirm-btn {
+      flex-shrink: 0;
+      margin-top: 0.6rem;
+      padding: 0.9rem 1.5rem;
+      font-size: 1.15rem;
+      font-weight: 800;
+      font-family: 'Inter', sans-serif;
+      letter-spacing: 0.03em;
+      border: none;
+      background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
+      color: white;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 16px rgba(245, 158, 11, 0.35);
+    }
+    .confirm-btn:hover:not(:disabled) {
+      background: linear-gradient(180deg, #fbbf24 0%, #f59e0b 100%);
+      box-shadow: 0 6px 24px rgba(245, 158, 11, 0.45);
+      transform: translateY(-1px);
+    }
+    .confirm-btn:disabled {
+      background: #252525;
+      color: #666;
+      cursor: not-allowed;
+      box-shadow: none;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .pick-cell { min-width: 0; }
+    .pick-cell-inner { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+    /* Sport switcher */
+    .sport-switcher {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+      margin-bottom: 0.85rem;
+      flex-shrink: 0;
+    }
+    .sport-switcher-btn {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      padding: 0.4rem 1rem;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: #1a1a1a;
+      color: rgba(255, 255, 255, 0.85);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .sport-switcher-btn:hover {
+      background: #252525;
+      color: #fff;
+    }
+    .sport-switcher-btn.active {
+      border-color: #f59e0b;
+      background: #2d2508;
+      color: #f59e0b;
+    }
+  </style>
+</head>
+<body data-sport="nfl">
+  <div id="app">
+    <div class="sport-switcher" role="tablist" aria-label="Sport">
+      <button type="button" class="sport-switcher-btn active" data-sport="nfl" role="tab" aria-selected="true">NFL</button>
+      <button type="button" class="sport-switcher-btn" data-sport="nba" role="tab" aria-selected="false">NBA</button>
+      <button type="button" class="sport-switcher-btn" data-sport="mlb" role="tab" aria-selected="false">MLB</button>
+    </div>
+    <div class="round-header">
+      <div class="header-badges">
+        <span class="position-badge">QB</span>
+        <span class="round-badge">Round 1/3</span>
+      </div>
+      <p class="round-instruction">Who had the better season?</p>
+    </div>
+
+    <div class="matchup">
+      <div class="player player-a">
+        <div class="player-headshot">
+          <img src="https://a.espncdn.com/i/headshots/nfl/players/full/3139477.png" alt="" loading="lazy" onerror="this.src='data:image/svg+xml,'+encodeURIComponent('<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 120\' fill=\'%234a5568\'><ellipse cx=\'50\' cy=\'38\' rx=\'22\' ry=\'26\'/><path d=\'M15 120c0-22 15-40 35-40s35 18 35 40z\'/></svg>')">
+        </div>
+        <div class="player-name">Patrick Mahomes</div>
+        <div class="player-meta">KC · 2024</div>
+      </div>
+      <div class="vs">VS</div>
+      <div class="player player-b">
+        <div class="player-headshot">
+          <img src="https://a.espncdn.com/i/headshots/nfl/players/full/3918292.png" alt="" loading="lazy" onerror="this.src='data:image/svg+xml,'+encodeURIComponent('<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 120\' fill=\'%234a5568\'><ellipse cx=\'50\' cy=\'38\' rx=\'22\' ry=\'26\'/><path d=\'M15 120c0-22 15-40 35-40s35 18 35 40z\'/></svg>')">
+        </div>
+        <div class="player-name">Josh Allen</div>
+        <div class="player-meta">BUF · 2024</div>
+      </div>
+    </div>
+
+    <div class="stat-table-wrap">
+      <table class="stat-table" role="grid" aria-label="Stat picks">
+        <thead>
+          <tr>
+            <th>Stat</th>
+            <th>Player A</th>
+            <th>Player B</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr data-stat-index="0" data-correct="A">
+            <td><span class="stat-label">Passing Yards</span></td>
+            <td class="pick-cell">
+              <div class="pick-cell-inner">
+                <button type="button" class="headshot-pick" data-pick="A" data-row="0" aria-label="Pick Mahomes for Passing Yards">
+                  <img src="https://a.espncdn.com/i/headshots/nfl/players/full/3139477.png" alt="">
+                </button>
+                <span class="stat-value stat-value-a" aria-hidden="true">—</span>
+              </div>
+            </td>
+            <td class="pick-cell">
+              <div class="pick-cell-inner">
+                <button type="button" class="headshot-pick" data-pick="B" data-row="0" aria-label="Pick Allen for Passing Yards">
+                  <img src="https://a.espncdn.com/i/headshots/nfl/players/full/3918292.png" alt="">
+                </button>
+                <span class="stat-value stat-value-b" aria-hidden="true">—</span>
+              </div>
+            </td>
+          </tr>
+          <tr data-stat-index="1" data-correct="B">
+            <td><span class="stat-label">Passing TD</span></td>
+            <td class="pick-cell">
+              <div class="pick-cell-inner">
+                <button type="button" class="headshot-pick" data-pick="A" data-row="1" aria-label="Pick Mahomes for Passing TD">
+                  <img src="https://a.espncdn.com/i/headshots/nfl/players/full/3139477.png" alt="">
+                </button>
+                <span class="stat-value stat-value-a" aria-hidden="true">—</span>
+              </div>
+            </td>
+            <td class="pick-cell">
+              <div class="pick-cell-inner">
+                <button type="button" class="headshot-pick" data-pick="B" data-row="1" aria-label="Pick Allen for Passing TD">
+                  <img src="https://a.espncdn.com/i/headshots/nfl/players/full/3918292.png" alt="">
+                </button>
+                <span class="stat-value stat-value-b" aria-hidden="true">—</span>
+              </div>
+            </td>
+          </tr>
+          <tr data-stat-index="2" data-correct="A">
+            <td><span class="stat-label">Interceptions (less)</span></td>
+            <td class="pick-cell">
+              <div class="pick-cell-inner">
+                <button type="button" class="headshot-pick" data-pick="A" data-row="2" aria-label="Pick Mahomes for Interceptions">
+                  <img src="https://a.espncdn.com/i/headshots/nfl/players/full/3139477.png" alt="">
+                </button>
+                <span class="stat-value stat-value-a" aria-hidden="true">—</span>
+              </div>
+            </td>
+            <td class="pick-cell">
+              <div class="pick-cell-inner">
+                <button type="button" class="headshot-pick" data-pick="B" data-row="2" aria-label="Pick Allen for Interceptions">
+                  <img src="https://a.espncdn.com/i/headshots/nfl/players/full/3918292.png" alt="">
+                </button>
+                <span class="stat-value stat-value-b" aria-hidden="true">—</span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <button type="button" class="confirm-btn" id="confirm-btn" disabled>Confirm</button>
+  </div>
+
+  <script>
+    (function () {
+      // Sport switcher: change background image
+      document.querySelectorAll('.sport-switcher-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var sport = btn.getAttribute('data-sport');
+          document.body.setAttribute('data-sport', sport);
+          document.querySelectorAll('.sport-switcher-btn').forEach(function (b) {
+            b.classList.toggle('active', b === btn);
+            b.setAttribute('aria-selected', b === btn ? 'true' : 'false');
+          });
+        });
+      });
+
+      // Mock data: [valA, valB] per row (row 0 = Passing Yds, 1 = TD, 2 = Int)
+      const values = [
+        ['4,777', '4,306'],
+        ['38', '42'],
+        ['14', '18']
+      ];
+      const picks = [null, null, null];
+      const correct = ['A', 'B', 'A']; // who actually had the better stat per row
+
+      const tbody = document.querySelector('.stat-table tbody');
+      const confirmBtn = document.getElementById('confirm-btn');
+      const headshotButtons = tbody.querySelectorAll('.headshot-pick');
+
+      function updateConfirmState() {
+        confirmBtn.disabled = picks.some(function (p) { return p === null; });
+      }
+
+      headshotButtons.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          const row = parseInt(btn.getAttribute('data-row'), 10);
+          const pick = btn.getAttribute('data-pick');
+          const rowEl = tbody.querySelector('tr[data-stat-index="' + row + '"]');
+          if (rowEl.classList.contains('revealed')) return;
+          picks[row] = pick;
+          rowEl.querySelectorAll('.headshot-pick').forEach(function (b) { b.classList.remove('selected'); });
+          btn.classList.add('selected');
+          updateConfirmState();
+        });
+      });
+
+      confirmBtn.addEventListener('click', function () {
+        if (picks.some(function (p) { return p === null; })) return;
+        tbody.querySelectorAll('tr').forEach(function (tr, i) {
+          tr.classList.add('revealed');
+          const valA = tr.querySelector('.pick-cell-inner .stat-value-a');
+          const valB = tr.querySelector('.pick-cell-inner .stat-value-b');
+          if (valA) valA.textContent = values[i][0];
+          if (valB) valB.textContent = values[i][1];
+          const picked = picks[i];
+          const correctPick = correct[i];
+          const pickA = tr.querySelector('.headshot-pick[data-pick="A"]');
+          const pickB = tr.querySelector('.headshot-pick[data-pick="B"]');
+          if (picked === 'A') pickA.classList.add(picked === correctPick ? 'picked-correct' : 'picked-wrong');
+          if (picked === 'B') pickB.classList.add(picked === correctPick ? 'picked-correct' : 'picked-wrong');
+        });
+        confirmBtn.textContent = 'Next round →';
+        confirmBtn.disabled = false;
+      });
+
+      updateConfirmState();
+    })();
+  </script>
+</body>
+</html>

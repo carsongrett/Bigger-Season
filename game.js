@@ -231,7 +231,7 @@ function getStatDisplayName(col, position, sport, mode) {
     if (position === 'RB') return 'Rushing Touchdowns';
     return 'Receiving Touchdowns';
   }
-  if (col === 'Int') return 'Interceptions (select less)';
+  if (col === 'Int') return 'Interceptions (less)';
   return STAT_NAMES[col] || col;
 }
 
@@ -1296,32 +1296,58 @@ function renderRound() {
   }
 
   state.picks = [];
-  statPicks.innerHTML = '';
+  const urlA = showHeadshots
+    ? (state.sport === 'nfl' ? getNflHeadshotUrl(r.playerA.Player) : state.sport === 'nba' ? getNbaHeadshotUrl(r.playerA.Player) : getMlbHeadshotUrl(r.playerA.Player)) || NBA_HEADSHOT_FALLBACK_SVG
+    : NBA_HEADSHOT_FALLBACK_SVG;
+  const urlB = showHeadshots
+    ? (state.sport === 'nfl' ? getNflHeadshotUrl(r.playerB.Player) : state.sport === 'nba' ? getNbaHeadshotUrl(r.playerB.Player) : getMlbHeadshotUrl(r.playerB.Player)) || NBA_HEADSHOT_FALLBACK_SVG
+    : NBA_HEADSHOT_FALLBACK_SVG;
 
-  const nameA = getLastName(r.playerA);
-  const nameB = getLastName(r.playerB);
+  const table = document.createElement('table');
+  table.className = 'stat-table';
+  table.setAttribute('role', 'grid');
+  table.setAttribute('aria-label', 'Stat picks');
+  table.innerHTML = '<thead><tr><th>Stat</th><th>Player A</th><th>Player B</th></tr></thead><tbody></tbody>';
+  const tbody = table.querySelector('tbody');
 
   for (let i = 0; i < r.stats.length; i++) {
     const stat = r.stats[i];
     const label = getStatDisplayName(stat, r.position, state.sport, state.mode);
-    const row = document.createElement('div');
-    row.className = 'stat-row';
-    row.dataset.statIndex = i;
-    row.innerHTML = `
-      <span class="stat-label">${label}</span>
-      <div class="stat-buttons">
-        <button class="stat-btn" data-pick="A" data-stat-index="${i}">${nameA}</button>
-        <button class="stat-btn" data-pick="B" data-stat-index="${i}">${nameB}</button>
-      </div>
+    const tr = document.createElement('tr');
+    tr.dataset.statIndex = i;
+    tr.innerHTML = `
+      <td><span class="stat-label">${label}</span></td>
+      <td class="pick-cell">
+        <div class="pick-cell-inner">
+          <button type="button" class="headshot-pick" data-pick="A" data-row="${i}" aria-label="Pick ${r.playerA.Player} for ${label}">
+            <img src="${urlA}" alt="">
+          </button>
+          <span class="stat-value stat-value-a" aria-hidden="true">—</span>
+        </div>
+      </td>
+      <td class="pick-cell">
+        <div class="pick-cell-inner">
+          <button type="button" class="headshot-pick" data-pick="B" data-row="${i}" aria-label="Pick ${r.playerB.Player} for ${label}">
+            <img src="${urlB}" alt="">
+          </button>
+          <span class="stat-value stat-value-b" aria-hidden="true">—</span>
+        </div>
+      </td>
     `;
-    statPicks.appendChild(row);
-
-    const btnA = row.querySelector('[data-pick="A"]');
-    const btnB = row.querySelector('[data-pick="B"]');
-
-    btnA.addEventListener('click', () => pickStat(i, 'A', row));
-    btnB.addEventListener('click', () => pickStat(i, 'B', row));
+    tbody.appendChild(tr);
+    const btnA = tr.querySelector('.headshot-pick[data-pick="A"]');
+    const btnB = tr.querySelector('.headshot-pick[data-pick="B"]');
+    btnA.addEventListener('click', () => pickStat(i, 'A', tr));
+    btnB.addEventListener('click', () => pickStat(i, 'B', tr));
+    btnA.querySelector('img').onerror = function () { this.src = NBA_HEADSHOT_FALLBACK_SVG; };
+    btnB.querySelector('img').onerror = function () { this.src = NBA_HEADSHOT_FALLBACK_SVG; };
   }
+
+  statPicks.innerHTML = '';
+  const wrap = document.createElement('div');
+  wrap.className = 'stat-table-wrap';
+  wrap.appendChild(table);
+  statPicks.appendChild(wrap);
 
   confirmBtn.disabled = true;
   confirmBtn.textContent = 'Confirm';
@@ -1330,9 +1356,9 @@ function renderRound() {
 
 function pickStat(index, pick, row) {
   state.picks[index] = pick;
-  const btns = row.querySelectorAll('.stat-btn');
+  const btns = row.querySelectorAll('.headshot-pick');
   btns.forEach(b => b.classList.remove('selected'));
-  const chosen = row.querySelector(`[data-pick="${pick}"]`);
+  const chosen = row.querySelector(`.headshot-pick[data-pick="${pick}"]`);
   chosen.classList.add('selected');
   confirmBtn.disabled = state.picks.some(p => p == null);
 }
@@ -1341,39 +1367,35 @@ function handleConfirm() {
   const r = state.rounds[state.currentRound];
   let roundScore = 0;
 
+  const rows = statPicks.querySelectorAll('.stat-table tbody tr');
   r.stats.forEach((stat, i) => {
     const pick = state.picks[i];
     const correct = r.correct[i];
     const isCorrect = pick === correct;
     if (isCorrect) roundScore++;
 
-    const row = statPicks.children[i];
+    const row = rows[i];
+    if (!row) return;
     row.classList.add('revealed');
 
-    const btnA = row.querySelector('[data-pick="A"]');
-    const btnB = row.querySelector('[data-pick="B"]');
+    const btnA = row.querySelector('.headshot-pick[data-pick="A"]');
+    const btnB = row.querySelector('.headshot-pick[data-pick="B"]');
     btnA.disabled = true;
     btnB.disabled = true;
 
     btnA.classList.remove('selected');
     btnB.classList.remove('selected');
 
-    const label = getStatDisplayName(stat, r.position, state.sport, state.mode);
     const valA = formatStatValue(r.playerA[stat], stat, state.sport, state.mode);
     const valB = formatStatValue(r.playerB[stat], stat, state.sport, state.mode);
 
-    btnA.textContent = valA;
-    btnB.textContent = valB;
+    const valElA = row.querySelector('.stat-value-a');
+    const valElB = row.querySelector('.stat-value-b');
+    if (valElA) valElA.textContent = valA;
+    if (valElB) valElB.textContent = valB;
 
     const pickedBtn = pick === 'A' ? btnA : btnB;
-    pickedBtn.classList.add('picked');
-    const feedback = document.createElement('span');
-    feedback.className = isCorrect ? 'feedback-check' : 'feedback-wrong';
-    feedback.textContent = isCorrect ? '✓' : '✗';
-    feedback.setAttribute('aria-hidden', 'true');
-    pickedBtn.appendChild(feedback);
-
-    row.querySelector('.stat-label').textContent = label;
+    pickedBtn.classList.add(isCorrect ? 'picked-correct' : 'picked-wrong');
   });
 
   state.score += roundScore;
