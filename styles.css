@@ -50,6 +50,12 @@ body[data-sport="mlb"] {
   background-position: center;
   background-attachment: fixed;
 }
+body[data-sport="pga"] {
+  background-image: url('logos/tall golf painting.png');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
 body[data-sport]::before {
   background: linear-gradient(180deg, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0.88) 50%, rgba(0, 0, 0, 0.92) 100%);
 }

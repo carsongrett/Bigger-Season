@@ -25,11 +25,26 @@ body {
   min-height: 100dvh;
   font-family: 'DM Sans', -apple-system, sans-serif;
   background: var(--bg);
+  background-image: url('../logos/tall golf painting.png');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
   color: var(--text);
   -webkit-font-smoothing: antialiased;
 }
 
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0.88) 50%, rgba(0, 0, 0, 0.92) 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
 #app {
+  position: relative;
+  z-index: 1;
   min-height: 100vh;
   min-height: 100dvh;
   padding: env(safe-area-inset-top) max(1rem, env(safe-area-inset-right)) 5rem max(1rem, env(safe-area-inset-left));

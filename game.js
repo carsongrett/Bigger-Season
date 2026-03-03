@@ -23,6 +23,8 @@ const SPORT_CONFIG = {
   },
   nba: {
     positions: ['PG', 'SG', 'SF', 'PF', 'C'],
+    // Grouped for daily: guards/wings (PG–SF) and bigs (PF–C) for cross-position matchups
+    positionGroups: { GUARDS: ['PG', 'SG', 'SF'], BIGS: ['PF', 'C'] },
     ratioColumn: 'PTS /G',
     ratioThreshold: () => 0.60,
     blitzPositions: ['PG', 'SG', 'SF', 'PF', 'C'],
@@ -738,6 +740,14 @@ function getRound3Position(seed, rng, mode, sport) {
   return 'WR';
 }
 
+function getPoolForPosition(sport, pos, data) {
+  if (sport === 'nba' && (pos === 'GUARDS' || pos === 'BIGS')) {
+    const positions = SPORT_CONFIG.nba.positionGroups[pos];
+    return (positions || []).flatMap(p => (data[p] || []));
+  }
+  return data[pos] || [];
+}
+
 function getPositionOrder(sport, seed, rng, mode) {
   const cfg = SPORT_CONFIG[sport];
   if (mode === MODES.MLB_BATTERS) return ['BATTERS', 'BATTERS', 'BATTERS'];
@@ -747,12 +757,8 @@ function getPositionOrder(sport, seed, rng, mode) {
     return ['QB', 'RB', getRound3Position(seed, rng, mode, sport)];
   }
   if (sport === 'nba') {
-    const positions = [...cfg.positions];
-    for (let i = positions.length - 1; i > 0; i--) {
-      const j = Math.floor(rng() * (i + 1));
-      [positions[i], positions[j]] = [positions[j], positions[i]];
-    }
-    return positions.slice(0, 3);
+    const groups = ['GUARDS', 'BIGS'];
+    return [groups[Math.floor(rng() * 2)], groups[Math.floor(rng() * 2)], groups[Math.floor(rng() * 2)]];
   }
   return ['QB', 'RB', 'WR'];
 }
@@ -953,7 +959,7 @@ function initGame(mode) {
   for (let r = 0; r < 3; r++) {
     const pos = posOrder[r];
     const stats = isRookieQB ? pickRookieQBStats(state.rng) : pickStatsForRound(pos, state.rng, state.sport, mode);
-    let pool = state.data[pos];
+    let pool = getPoolForPosition(state.sport, pos, state.data);
     if (headshotsEnabledForSport(state.sport) && Array.isArray(pool)) {
       pool = pool.filter(p => playerHasHeadshot(p.Player, state.sport));
     }
@@ -1048,6 +1054,7 @@ function initBlindResume() {
   statPicks.style.display = 'none';
   confirmBtn.style.display = 'none';
   positionLabel.textContent = 'QB';
+  positionLabel.style.display = '';
   roundInstruction.textContent = 'Guess the player from their stats';
   renderBlindResumeRound();
 }
@@ -1082,6 +1089,7 @@ function initBlindResumeNBA() {
   statPicks.style.display = 'none';
   confirmBtn.style.display = 'none';
   positionLabel.textContent = 'Player';
+  positionLabel.style.display = '';
   roundInstruction.textContent = 'Guess the player from their stats';
   renderBlindResumeRound();
 }
@@ -1308,7 +1316,14 @@ function renderRound() {
   const r = state.rounds[state.currentRound];
   if (!r) return;
 
-  positionLabel.textContent = r.position;
+  const posLabel = (state.sport === 'nba' && (r.position === 'GUARDS' || r.position === 'BIGS'))
+    ? ''
+    : r.position;
+  positionLabel.textContent = posLabel;
+  positionLabel.style.display = posLabel ? '' : 'none';
+  if (state.mode !== MODES.BLIND_RESUME && state.mode !== MODES.BLIND_RESUME_NBA) {
+    roundInstruction.textContent = getRoundInstruction(state.sport, state.mode);
+  }
   if (state.mode === MODES.BLITZ) {
     roundIndicator.textContent = `Round ${state.currentRound + 1}`;
   } else {
@@ -1527,6 +1542,13 @@ function getShareDateStr() {
   return `(${SHORT_MONTHS_NO_DOT[d.getMonth()]} ${d.getDate()})`;
 }
 
+function getRoundInstruction(sport, mode) {
+  if (sport === 'nfl') return 'Who had the better season? Stats from 2023-2025';
+  if (sport === 'nba') return 'Who is having the better 2026 season?';
+  if (sport === 'mlb') return 'Who had the better 2025 season?';
+  return 'Who had the better season?';
+}
+
 // Full title for share first line: e.g. "NFL Daily", "NBA Daily", "MLB Batters Daily", "NFL Rookie QB Daily", "NFL Blind Resume"
 function getShareTitle(mode, sport) {
   const s = (sport || '').toUpperCase();
@@ -1558,7 +1580,9 @@ function buildShareText(mode, score, roundScores, sport, forSms) {
     roundScores.forEach(({ position, score: rs, total: t }, idx) => {
       const correct = '✅'.repeat(rs);
       const wrong = '❌'.repeat(t - rs);
-      if (mode === 'rookie_qb' || mode === 'mlb_batters' || mode === 'mlb_pitchers') {
+      const useRoundNum = mode === 'rookie_qb' || mode === 'mlb_batters' || mode === 'mlb_pitchers' ||
+        (mode === 'daily' && sport === 'nba' && (position === 'GUARDS' || position === 'BIGS'));
+      if (useRoundNum) {
         text += `Rd. ${idx + 1}  ${correct}${wrong}  ${rs}/${t}\n`;
       } else {
         text += `${position}  ${correct}${wrong}  ${rs}/${t}\n`;
@@ -1582,7 +1606,9 @@ function buildSharePreview(mode, score, roundScores, sport) {
     roundScores.forEach(({ position, score: rs, total: t }, idx) => {
       const correct = '✅'.repeat(rs);
       const wrong = '❌'.repeat(t - rs);
-      if (mode === 'rookie_qb' || mode === 'mlb_batters' || mode === 'mlb_pitchers') {
+      const useRoundNum = mode === 'rookie_qb' || mode === 'mlb_batters' || mode === 'mlb_pitchers' ||
+        (mode === 'daily' && sport === 'nba' && (position === 'GUARDS' || position === 'BIGS'));
+      if (useRoundNum) {
         text += `Rd. ${idx + 1}  ${correct}${wrong}  ${rs}/${t}\n`;
       } else {
         text += `${position}  ${correct}${wrong}  ${rs}/${t}\n`;
@@ -1799,7 +1825,7 @@ function goToStartScreen() {
   startScreen.classList.add('active');
   roundScreen.classList.remove('active');
   resultsScreen.classList.remove('active');
-  roundInstruction.textContent = 'Who had the better season?';
+  roundInstruction.textContent = getRoundInstruction(state.sport, state.mode || 'daily');
   updateStartScreen();
 }
 
