@@ -17,14 +17,14 @@ const SPORT_CONFIG = {
   nfl: {
     positions: ['QB', 'RB', 'WR', 'TE'],
     ratioColumn: 'Yds',
-    ratioThreshold: (pos) => pos === 'QB' ? 0.70 : 0.65,
+    ratioThreshold: (pos) => pos === 'QB' ? 0.60 : 0.50,
     blitzPositions: ['QB', 'RB', 'WR', 'TE'],
     round3Positions: ['WR', 'TE'],
   },
   nba: {
     positions: ['PG', 'SG', 'SF', 'PF', 'C'],
     ratioColumn: 'PTS /G',
-    ratioThreshold: () => 0.80,
+    ratioThreshold: () => 0.60,
     blitzPositions: ['PG', 'SG', 'SF', 'PF', 'C'],
     round3Positions: ['PG', 'SG', 'SF', 'PF', 'C'],
     noMatchPairs: [['PG', 'C']],
@@ -32,7 +32,7 @@ const SPORT_CONFIG = {
   mlb: {
     positions: ['BATTERS', 'PITCHERS'],
     ratioColumn: (pos) => pos === 'BATTERS' ? 'R' : null,
-    ratioThreshold: (pos) => pos === 'BATTERS' ? 0.70 : 0,
+    ratioThreshold: (pos) => pos === 'BATTERS' ? 0.60 : 0,
     blitzPositions: ['BATTERS', 'PITCHERS'],
   },
 };

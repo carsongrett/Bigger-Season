@@ -925,13 +925,38 @@ body {
   color: var(--text);
 }
 
+.how-to-modal-objective {
+  font-size: 1rem;
+  margin-bottom: 1rem !important;
+}
+
 .how-to-modal-note {
   font-size: 0.8rem;
   color: var(--muted);
   margin-bottom: 1.25rem !important;
 }
 
-.how-to-modal-box p:last-of-type:not(.how-to-modal-note) {
+.how-to-modal-more {
+  margin: 0.75rem 0 0 !important;
+  text-align: center;
+}
+
+.how-to-modal-more-btn {
+  font: inherit;
+  font-size: 0.9rem;
+  background: none;
+  border: none;
+  color: var(--accent);
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0.25rem 0;
+}
+
+.how-to-modal-more-btn:hover {
+  color: #38b86c;
+}
+
+.how-to-modal-box p:last-of-type:not(.how-to-modal-note):not(.how-to-modal-more) {
   margin-bottom: 1.25rem;
 }
 

@@ -280,6 +280,7 @@ const howToModal = document.getElementById('how-to-modal');
 const howToModalBackdrop = document.getElementById('how-to-modal-backdrop');
 const howToModalClose = document.getElementById('how-to-modal-close');
 const howToModalBtn = document.getElementById('how-to-modal-btn');
+const howToModalMoreBtn = document.getElementById('how-to-modal-more-btn');
 const golfShareGrid = document.getElementById('golf-share-grid');
 const golfShareNativeBtn = document.getElementById('golf-share-native-btn');
 const golfShareSmsBtn = document.getElementById('golf-share-sms-btn');
@@ -873,6 +874,12 @@ function closeHowToModal() {
 if (howToModalBackdrop) howToModalBackdrop.addEventListener('click', closeHowToModal);
 if (howToModalClose) howToModalClose.addEventListener('click', closeHowToModal);
 if (howToModalBtn) howToModalBtn.addEventListener('click', closeHowToModal);
+if (howToModalMoreBtn) {
+  howToModalMoreBtn.addEventListener('click', function () {
+    closeHowToModal();
+    showHowToDetailModal();
+  });
+}
 
 function showHowToDetailModal() {
   if (howToDetailModal) howToDetailModal.classList.remove('hidden');
