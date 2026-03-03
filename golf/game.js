@@ -62,7 +62,20 @@ const MAJOR_EVENT_NAMES = new Set([
   'British Open Championship',
 ]);
 
-// Seeded RNG for repeatable puzzles (use date string later for daily)
+// Seeded RNG for repeatable puzzles. Date string (e.g. "2026-03-02_majors") must be hashed to a number so mulberry32 gets a proper numeric state.
+function hashSeedToNumber(seedStr) {
+  if (typeof seedStr !== 'string') return 1;
+  let h = 0;
+  for (let i = 0; i < seedStr.length; i++) {
+    h = Math.imul(31, h) + seedStr.charCodeAt(i) | 0;
+  }
+  h = Math.imul(h ^ (h >>> 16), 0x85ebca6b) | 0;
+  h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35) | 0;
+  h = (h ^ (h >>> 16)) >>> 0;
+  if (h === 0) h = 1;
+  return h;
+}
+
 function mulberry32(seed) {
   return function () {
     let t = (seed += 0x6d2b79f5);
@@ -153,7 +166,7 @@ function loadData(easyMode) {
 }
 
 function buildPuzzle(rows, seed, rankMap, alltimeSet) {
-  const rng = mulberry32(seed);
+  const rng = mulberry32(hashSeedToNumber(seed));
   const byPlayer = new Map();
   for (const r of rows) {
     if (!byPlayer.has(r.player_name)) byPlayer.set(r.player_name, []);
