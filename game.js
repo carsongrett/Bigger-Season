@@ -1416,6 +1416,12 @@ function showDailyAlreadyPlayed() {
   }
   if (howToBtn) howToBtn.style.display = 'flex';
   if (mainHeader) mainHeader.classList.add('in-game');
+  /* Keep data-sport on body so results page keeps the tall painting background (same as showResults) */
+  if (state.sport === 'nfl' || state.sport === 'nba' || state.sport === 'mlb') {
+    document.body.setAttribute('data-sport', state.sport);
+  } else {
+    document.body.removeAttribute('data-sport');
+  }
   const score = parseInt(getStoredDailyScore(state.sport, state.mode), 10);
   const roundScores = getStoredRoundScores(state.sport, state.mode);
   const total = (state.mode === MODES.ROOKIE_QB) ? 12 : (state.mode === MODES.BLIND_RESUME || state.mode === MODES.BLIND_RESUME_NBA) ? null : 9;
@@ -2131,6 +2137,13 @@ function setupInitialsModal() {
   }
 }
 
+function ensureResultsBackground() {
+  /* After bfcache restore, body background can fail to repaint; re-apply data-sport when results screen is active */
+  if (resultsScreen && resultsScreen.classList.contains('active') && (state.sport === 'nfl' || state.sport === 'nba' || state.sport === 'mlb')) {
+    document.body.setAttribute('data-sport', state.sport);
+  }
+}
+
 async function main() {
   try {
     setupHowToPlay();
@@ -2140,6 +2153,9 @@ async function main() {
     setupSportTabs();
     setupModeCards();
     setupStartBtn();
+    window.addEventListener('pageshow', function (e) {
+      if (e.persisted) ensureResultsBackground();
+    });
     state.allData = await loadData();
     state.data = state.allData[state.sport];
     goToStartScreen();
