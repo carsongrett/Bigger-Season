@@ -1,5 +1,6 @@
-# Sends yesterday's golf recap image to Telegram. Requires repo secrets:
-# TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
+# Sends yesterday's golf recap image to Telegram. Uses Actions secrets named
+# TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID (repository secrets, or environment secrets
+# if the job sets `environment:` below to match your GitHub Environment name).
 # Optional env RECAP_GOLF_MODE: majors | hard | masters (set via workflow env below).
 
 name: Daily golf recap
@@ -13,6 +14,8 @@ on:
 jobs:
   recap:
     runs-on: ubuntu-latest
+    # Must match Settings → Environments → [your env name] if secrets live there
+    environment: 'Configure TELEGRAM_BOT_TOKEN'
     steps:
       - uses: actions/checkout@v4
 
